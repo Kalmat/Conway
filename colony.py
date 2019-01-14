@@ -18,7 +18,8 @@ class Colony:
 
         self.screen, self.xmax, self.ymax, self.interpreter, self.archOS = \
                                     disputil.InitDisplay(settings.display_size[0], settings.display_size[1],
-                                    hideMouse=False, icon=settings.iconf+settings.icon, caption=settings.caption)
+                                                         hideMouse=False, icon=settings.icons_folder + settings.icon,
+                                                         caption=settings.caption)
         self.xmin = self.ymin = 0
         self.xmargin = self.xmax * 0.01
         self.xgap = self.xmargin * 3
@@ -34,14 +35,14 @@ class Colony:
         self.show_terrain = settings.show_terrain
         self.logging = settings.logging
 
-        self.fontObj = disputil.LoadFont(settings.values_font, settings.values_font_size, 0)
-        self.welcome_fontObj = disputil.LoadFont(settings.welcome_font, settings.welcome_font_size, 0)
-        self.title_fontObj = disputil.LoadFont(settings.title_font, settings.title_font_size, 0)
-        self.presskey_fontObj = disputil.LoadFont(settings.presskey_font, settings.presskey_font_size, 1)
-        self.name_fontObj = disputil.LoadFont(settings.name_font, settings.name_font_size, 0)
-        self.info_fontObj = disputil.LoadFont(settings.info_font, settings.info_font_size, 0)
+        self.fontObj = disputil.LoadFont(settings.fonts_folder+settings.values_font, settings.values_font_size, 0)
+        self.welcome_fontObj = disputil.LoadFont(settings.fonts_folder+settings.welcome_font, settings.welcome_font_size, 0)
+        self.title_fontObj = disputil.LoadFont(settings.fonts_folder+settings.title_font, settings.title_font_size, 0)
+        self.presskey_fontObj = disputil.LoadFont(settings.fonts_folder+settings.presskey_font, settings.presskey_font_size, 1)
+        self.name_fontObj = disputil.LoadFont(settings.fonts_folder+settings.name_font, settings.name_font_size, 0)
+        self.info_fontObj = disputil.LoadFont(settings.fonts_folder+settings.info_font, settings.info_font_size, 0)
 
-        self.firstRun = True
+        self.first_run = True
         self.chosen_fauna = settings.colony_diversity
         self.icon = []
         self.terrain_type = None
@@ -51,59 +52,50 @@ class Colony:
         self.keyP = ""
 
     ####################################################################
-    def __del__(self):
-        pass
-
-    ####################################################################
     def intro(self):
 
         self.screen.fill(settings.cBkg)
         pygame.draw.rect(self.screen, settings.cBkg_highlighted, (self.xmax*0.1, self.ymax*0.1, self.xmax*0.8, self.ymax*0.8))
 
-        tx, ty = disputil.DrawText(self.screen, settings.title, self.title_fontObj, settings.title_color,
-                                   blit=False)
+        for i in range(0, 4):
+            icon = disputil.loadIcon("Virus"+str(i+1)+"_Intro", settings.icons_folder)
+            icon = pygame.transform.smoothscale(icon, (settings.intro_icons_scale, settings.intro_icons_scale))
+            x = self.xmax * settings.intro_icon_pos[i][0] - int(self.xmax * settings.intro_icon_gap[i][0] / 1280)
+            y = self.ymax * settings.intro_icon_pos[i][1] - int(self.ymax * settings.intro_icon_gap[i][1] / 800)
+            self.screen.blit(icon, (x, y))
+
         disputil.DrawText(self.screen, settings.welcome, self.welcome_fontObj, settings.welcome_color,
-                          blit=True, x=self.xmax/2 - tx/2 + self.xgap, y=int(self.ymax*1/3))
-        disputil.DrawText(self.screen, settings.title, self.title_fontObj, settings.title_color,
-                          blit=True, x=self.xmax/2 - tx/2, y=self.ymax/2 - ty/2)
-
-        icon = disputil.loadIcon(settings.intro, settings.iconf)
-        icon = pygame.transform.smoothscale(icon, (settings.intro_size_scale, settings.intro_size_scale))
-        self.screen.blit(icon, (self.xmax/2+5, self.ymax/2-32))
-
-        icon = disputil.loadIcon("Virus1_Intro", settings.iconf)
-        icon = pygame.transform.smoothscale(icon, (settings.intro_icons_size_scale, settings.intro_icons_size_scale))
-        self.screen.blit(icon, (self.xmin - 80, self.ymax - 180))
-
-        icon = disputil.loadIcon("Virus2_Intro", settings.iconf)
-        icon = pygame.transform.smoothscale(icon, (settings.intro_icons_size_scale, settings.intro_icons_size_scale))
-        self.screen.blit(icon, (self.xmax - 170, self.ymin - 75))
-
-        icon = disputil.loadIcon("Virus3_Intro", settings.iconf)
-        icon = pygame.transform.smoothscale(icon, (settings.intro_icons_size_scale, settings.intro_icons_size_scale))
-        self.screen.blit(icon, (self.xmin - 120, self.ymin - 80))
-
-        icon = disputil.loadIcon("Virus4_Intro", settings.iconf)
-        icon = pygame.transform.smoothscale(icon, (settings.intro_icons_size_scale, settings.intro_icons_size_scale))
-        self.screen.blit(icon, (self.xmax - 220, self.ymax - 200))
+                          blit=True, x=self.xmax*0.1 + self.xgap, y=int(self.ymax*1/3.2))
 
         pygame.display.update()
 
-        if self.firstRun:
-            self.firstRun = False
-            time.sleep(1)
+        tx, ty = disputil.DrawText(self.screen, settings.title, self.title_fontObj, settings.title_color, blit=False)
+        if self.first_run:
+            disputil.DrawText(self.screen, settings.title, self.title_fontObj, settings.title_color,
+                              blit=True, x=self.xmax/2 - tx/2, y=self.ymax/2 - ty/2,
+                              outline="FadeIn", ocolor=settings.cBkg_highlighted)
+            self.first_run = False
+        else:
+            disputil.DrawText(self.screen, settings.title, self.title_fontObj, settings.title_color,
+                              blit=True, x=self.xmax/2 - tx/2, y=self.ymax/2 - ty/2)
+        rect = [(self.xmax/2 - tx/2, self.ymax/2 - ty/2,  tx, ty)]
+
+        icon = disputil.loadIcon(settings.intro_icon, settings.icons_folder)
+        icon = pygame.transform.smoothscale(icon, (settings.intro_size_scale, settings.intro_size_scale))
+        self.screen.blit(icon, (self.xmax/2+settings.intro_size_scale/10, self.ymax/2-settings.intro_size_scale/2))
 
         tx, ty = disputil.DrawText(self.screen, settings.presskey, self.presskey_fontObj, settings.presskey_color,
                                    blit=False)
         disputil.DrawText(self.screen, settings.presskey, self.presskey_fontObj, settings.presskey_color,
                           blit=True, x=self.xmax/2 - tx/2, y=self.ymax*0.85)
+        rect.append((self.xmax/2 - tx/2, self.ymax*0.85, tx, ty))
 
-        pygame.display.update((self.xmax/2 - tx/2, self.ymax*0.85-ty, tx, ty*2))
+        pygame.display.update(rect)
 
         event = disputil.event_loop()
         while event.get("Type") not in (pygame.KEYDOWN, pygame.MOUSEBUTTONDOWN):
             event = disputil.event_loop()
-            time.sleep(0.1)
+            time.sleep(0.01)
 
         self.choose_fauna()
 
@@ -114,14 +106,14 @@ class Colony:
 
         self.chosen_fauna = []
         done = False
+        first_run = True
         chosen_count = 0
         draw_button = True
-        changed = [True, True, True, True]
-        chosen = [False, False, False, False]
-        icon = ["", "", "", ""]
-        box = ["", "", "", ""]
-        box_bacteria_options = ["", "", "", ""]
-        firstRun = True
+        changed = [True] * len(settings.fauna)
+        chosen = [False] * len(settings.fauna)
+        icon = [""] * len(settings.fauna)
+        box = [""] * len(settings.fauna)
+        box_bacteria_options = [""] * len(settings.fauna)
 
         self.screen.fill(settings.cBkg_highlighted)
         rect = (self.xmax * 0.1, self.ymax * 0.1, self.xmax * 0.8, self.ymax * 0.8)
@@ -129,30 +121,30 @@ class Colony:
 
         while not done:
 
-            if firstRun:
+            if first_run:
 
-                arrow = disputil.loadIcon("Back", settings.iconf)
-                arrow = pygame.transform.smoothscale(arrow, (64, 64))
+                arrow = disputil.loadIcon(settings.arrow_icon, settings.icons_folder)
+                arrow = pygame.transform.smoothscale(arrow, (settings.arrow_icon_scale, settings.arrow_icon_scale))
                 bx, by = arrow.get_size()
                 self.screen.blit(arrow, (self.xmargin, self.ymax - self.ymargin - by))
-                disputil.DrawText(self.screen, "Back", self.presskey_fontObj, pygame.Color("white"),
+                disputil.DrawText(self.screen, settings.back, self.presskey_fontObj, pygame.Color("white"),
                                   blit=True, x=self.xmargin*2 + bx, y=self.ymax - self.ymargin - by*0.8)
                 back_box = pygame.Rect((self.xmargin, self.ymax - self.ymargin - by, bx, by))
 
                 arrow = pygame.transform.rotate(arrow, 180)
                 self.screen.blit(arrow, (self.xmax - self.xmargin - bx, self.ymax - self.ymargin - by*0.9))
-                tx, ty = disputil.DrawText(self.screen, "Options", self.presskey_fontObj, pygame.Color("white"),
-                                           blit=False)
-                disputil.DrawText(self.screen, "Options", self.presskey_fontObj, pygame.Color("white"),
+                tx, ty = disputil.DrawText(self.screen, settings.options.capitalize(), self.presskey_fontObj,
+                                          settings.presskey_color, blit=False)
+                disputil.DrawText(self.screen, settings.options.capitalize(), self.presskey_fontObj, settings.presskey_color,
                                   blit=True, x=self.xmax - self.xmargin*2 - bx - tx, y=self.ymax - self.ymargin - by*0.8)
                 options_box = pygame.Rect((self.xmax - self.xmargin - bx, self.ymax - self.ymargin - by, bx, by))
 
-                logo = disputil.loadIcon("Intro", settings.iconf)
-                logo = pygame.transform.smoothscale(logo, (128, 128))
+                logo = disputil.loadIcon(settings.intro_icon, settings.icons_folder)
+                logo = pygame.transform.smoothscale(logo, (settings.intro_fauna_icon_scale, settings.intro_fauna_icon_scale))
 
                 for i in range(0, len(icon)):
-                    icon[i] = disputil.loadIcon("Virus"+str(i+1)+"_Intro", settings.iconf)
-                    icon[i] = pygame.transform.smoothscale(icon[i], (156, 156))
+                    icon[i] = disputil.loadIcon(settings.intro_icons_prefix+str(i+1)+settings.intro_icons_suffix, settings.icons_folder)
+                    icon[i] = pygame.transform.smoothscale(icon[i], (settings.fauna_icons_scale, settings.fauna_icons_scale))
                     if i == 0:
                         ix, iy = icon[i].get_size()
                     if i % 2 == 0:
@@ -176,41 +168,26 @@ class Colony:
                     pygame.draw.rect(self.screen, rect_color, (xrect, yrect, self.xmax * 0.8 - self.xgap*4, iy*0.8))
 
                     if i == 0:
-                        self.screen.blit(logo, (self.xmax/2 - 64, self.ymin + self.ymargin))
+                        self.screen.blit(logo, (self.xmax/2 - 50, self.ymin + self.ymargin))
                     self.screen.blit(icon[i], (box[i][0], box[i][1]))
 
-                    name = self.fauna[i]["Name"].capitalize()
-                    category = self.fauna[i]["Category"].capitalize()
-                    food = self.fauna[i]["Food"].capitalize()
-                    reproduction = self.fauna[i]["Reproduction"].capitalize()
-                    speed = str(self.fauna[i]["Speed"])
-                    longevity = str(self.fauna[i]["Longevity"])
-                    max_size = str(self.fauna[i]["Max Size"])
-
-                    tx, ty = disputil.DrawText(self.screen, name, self.name_fontObj, text_color, blit=False)
-                    itx, ity = disputil.DrawText(self.screen, "Category: " + category, self.info_fontObj, text_color, blit=False)
+                    itx, ity = disputil.DrawText(self.screen, self.fauna[i]["Name"].capitalize(), self.name_fontObj, settings.info_font_color, blit=False)
                     if i % 2 == 0:
                         xinfo = box[i][0] + ix + self.xgap
-                        xname = xinfo + itx + self.xgap*2
+                        xname = xinfo + self.xgap*4
                     else:
-                        xinfo = box[i][0] - itx - self.xgap
-                        xname = xinfo - tx - self.xgap
+                        xinfo = box[i][0] - ix
+                        xname = xinfo - itx - self.xgap
                     yname = box[i][1] + self.ygap*2
                     yinfo = yrect + self.ymargin
-                    disputil.DrawText(self.screen, name, self.name_fontObj, text_color, blit=True, x=xname, y=yname)
-                    disputil.DrawText(self.screen, "Category: " + category, self.info_fontObj, text_color, blit=True, x=xinfo, y=yinfo)
-                    yinfo = yinfo + ity
-                    disputil.DrawText(self.screen, "Food: " + food, self.info_fontObj, text_color, blit=True, x=xinfo, y=yinfo)
-                    yinfo = yinfo + ity
-                    disputil.DrawText(self.screen, "Reproduction: " + reproduction, self.info_fontObj, text_color, blit=True, x=xinfo, y=yinfo)
-                    yinfo = yinfo + ity
-                    disputil.DrawText(self.screen, "Speed: " + speed, self.info_fontObj, text_color, blit=True, x=xinfo, y=yinfo)
-                    yinfo = yinfo + ity
-                    disputil.DrawText(self.screen, "Longevity: " + longevity, self.info_fontObj, text_color, blit=True, x=xinfo, y=yinfo)
-                    yinfo = yinfo + ity
-                    disputil.DrawText(self.screen, "Max Size: " + max_size, self.info_fontObj, text_color, blit=True, x=xinfo, y=yinfo)
+                    disputil.DrawText(self.screen, self.fauna[i]["Name"].capitalize(), self.name_fontObj, settings.info_font_color, blit=True, x=xname, y=yname)
+                    info_texts = ["Category: ", "Food: ", "Reproduction: ", "Speed: ", "Longevity: ", "Max Size: "]
+                    info_values = [self.fauna[i]["Category"].capitalize(), self.fauna[i]["Food"].capitalize(), self.fauna[i]["Reproduction"].capitalize(), str(self.fauna[i]["Speed"]), str(self.fauna[i]["Longevity"]), str(self.fauna[i]["Max Size"])]
+                    for i in range(0, len(info_texts)):
+                        itx, ity = disputil.DrawText(self.screen, info_texts[i] + info_values[i], self.info_fontObj, text_color, blit=True, x=xinfo, y=yinfo)
+                        yinfo = yinfo + ity
 
-            if firstRun or draw_button or changed[0] or changed[1] or changed[2] or changed[3]:
+            if first_run or draw_button or changed[0] or changed[1] or changed[2] or changed[3]:
                 if draw_button:
                     if chosen_count:
                         color = pygame.Color("red")
@@ -225,7 +202,7 @@ class Colony:
 
                 pygame.display.update()
                 changed = [False, False, False, False]
-                firstRun = False
+                first_run = False
 
             event = disputil.event_loop()
             if event.get("Type") == pygame.MOUSEBUTTONDOWN:
@@ -234,7 +211,7 @@ class Colony:
                     return
                 if options_box.collidepoint(event.get("Pos")):
                     self.general_options()
-                    firstRun = True
+                    first_run = True
                     changed = [True, True, True, True]
                     draw_button = True
                     pygame.draw.rect(self.screen, pygame.Color("cadetblue"),
@@ -254,7 +231,7 @@ class Colony:
                 for i in range (0, len(box_bacteria_options)):
                     if box_bacteria_options[i].collidepoint(event.get("Pos")):
                         self.fauna[i] = self.bacteria_options(self.fauna[i])
-                        firstRun = True
+                        first_run = True
                         changed = [True, True, True, True]
                         draw_button = True
                         pygame.draw.rect(self.screen, pygame.Color("cadetblue"),
@@ -267,7 +244,7 @@ class Colony:
                 if event.get("Key") == pygame.K_RETURN and chosen_count:
                     done = True
 
-            time.sleep(0.05)
+            time.sleep(0.01)
 
         for i in range(0, len(chosen)):
             if chosen[i]:
@@ -280,100 +257,22 @@ class Colony:
 
         self.screen.fill(pygame.Color("cadetblue4"))
 
-        icon = disputil.loadIcon(bacteria["Icon File"]+"_Intro", settings.iconf)
-        icon = pygame.transform.smoothscale(icon, (128, 128))
+        icon = disputil.loadIcon(bacteria["Icon File"] +"_Intro", settings.icons_folder)
+        icon = pygame.transform.smoothscale(icon, (settings.bacteria_options_icon_scale, settings.bacteria_options_icon_scale))
         ix, iy = icon.get_size()
-        self.screen.blit(icon, (self.xmax / 2 - 64, self.ymin + self.ymargin))
+        self.screen.blit(icon, (self.xmax / 2 - ix/2, self.ymin + self.ymargin))
 
-        frame_icon = disputil.loadIcon("Frame", settings.iconf)
-        frame_icon = pygame.transform.smoothscale(frame_icon, (32, 32))
-        check_icon = disputil.loadIcon("Check", settings.iconf)
-        check_icon = pygame.transform.smoothscale(check_icon, (32, 32))
+        tx, ty = disputil.DrawText(self.screen, bacteria["Name"], self.name_fontObj, settings.options_title_color, blit=False)
+        disputil.DrawText(self.screen, bacteria["Name"], self.name_fontObj, settings.options_title_color, blit=True, x=self.xmax/2 - tx/2, y=self.ygap + iy*0.8)
 
-        done = False
         text = ["Category", "Food", "Starvation Limit", "Reproduction", "Gestation Gap", "Speed", "Longevity", "Max Size"]
+        tip = [settings.category_tip, settings.food_tip, settings.starvation_tip, settings.reproduction_tip, None, None, None, None]
         value = [bacteria["Category"], bacteria["Food"], bacteria["Starvation Limit"], bacteria["Reproduction"], bacteria["Gestation Gap"], bacteria["Speed"], bacteria["Longevity"], bacteria["Max Size"]]
-        changed = [True, True, True, True, True, True, True, True]
-        box = ["", "", "", "", "", "", "", ""]
-        firstRun = True
+        rect = (self.xgap * 10, iy + ty + self.ygap, self.xmax*0.8, self.ymax*0.8)
 
-        tx, ty = disputil.DrawText(self.screen, bacteria["Name"], self.name_fontObj, settings.cOptions_title,
-                                   blit=False)
-        disputil.DrawText(self.screen, bacteria["Name"], self.name_fontObj, settings.cOptions_title,
-                          blit=True, x=self.xmax/2 - tx/2, y=self.ygap + iy*0.8)
+        value = self.get_options(text, tip, value, rect)
 
-        x = self.xgap * 10
-        y = self.ygap + iy*0.8 + ty
-        ix = x + self.xgap*10 + self.xgap
-        init_iy = y + self.ymargin
-
-        for i in range(0, len(text)):
-            tx, ty = disputil.DrawText(self.screen, text[i], self.presskey_fontObj,
-                                       settings.cOptions_text, blit=True, x=x, y=y)
-            if i == 0:
-                disputil.DrawText(self.screen, settings.category_tip, self.info_fontObj, settings.cOptions_text,
-                                  blit=True, x=x, y=y+ty*0.8)
-            elif i == 1:
-                disputil.DrawText(self.screen, settings.food_tip, self.info_fontObj, settings.cOptions_text,
-                                  blit=True, x=x, y=y+ty*0.8)
-            elif i == 3:
-                disputil.DrawText(self.screen, settings.reproduction_tip, self.info_fontObj, settings.cOptions_text,
-                                  blit=True, x=x, y=y+ty*0.8)
-            y = y + ty + self.ygap
-
-        pygame.draw.rect(self.screen, settings.cButton, (self.xmax / 2 - 100, self.ymax - 50 - self.ymargin, 200, 50))
-        tx, ty = disputil.DrawText(self.screen, settings.options_button, self.presskey_fontObj, settings.cButton_text,
-                                   blit=False)
-        disputil.DrawText(self.screen, settings.options_button, self.presskey_fontObj, settings.cButton_text,
-                          blit=True, x=self.xmax / 2 - tx / 2, y=self.ymax - 50 - self.ymargin)
-        button = pygame.Rect((self.xmax / 2 - 100, self.ymax - 50 - self.ymargin, 200, 50))
-
-        while not done:
-
-            for i in range(0, len(value)):
-                if changed[i]:
-                    iy = init_iy + (ty + self.ygap) * i
-                    if (type(value[i]) is int or
-                            type(value[i]) is str) and \
-                            (firstRun or changed[i]):
-                        disputil.DrawText(self.screen, str(value[i]), self.presskey_fontObj, settings.cOptions_text,
-                                          blit=True, x=ix, y=iy)
-                        box[i] = pygame.Rect(ix, iy, 100, 50)
-                        if not firstRun:
-                            value[i] = disputil.get_input_box_value(self.screen, ix, iy, str(value[i]))
-                    elif type(value[i]) is bool:
-                        pygame.draw.rect(self.screen, pygame.Color("cadetblue4"), (ix, iy, 32, 32))
-                        self.screen.blit(frame_icon, (ix, iy))
-                        if not firstRun:
-                            if value[i]:
-                                value[i] = False
-                            else:
-                                value[i] = True
-                        if value[i]:
-                            self.screen.blit(check_icon, (ix, iy))
-                        box[i] = pygame.Rect(ix, iy, 32, 32)
-                    update_disp = True
-                    changed[i] = False
-
-            if firstRun or update_disp:
-                pygame.display.update()
-                firstRun = False
-                update_disp = False
-
-            event = disputil.event_loop()
-            if event.get("Type") == pygame.MOUSEBUTTONDOWN:
-                for i in range(0, len(box)):
-                    if box[i].collidepoint(event.get("Pos")):
-                        changed[i] = True
-                if button.collidepoint(event.get("Pos")):
-                    done = True
-            elif event.get("Type") == pygame.KEYDOWN:
-                if event.get("Key") == pygame.K_RETURN:
-                    done = True
-
-            time.sleep(0.05)
-
-        bacteria["Category"] = value[0]
+        bacteria["Category"],  = value[0]
         bacteria["Food"] = value[1]
         bacteria["Starvation Limit"] = int(value[2])
         bacteria["Reproduction"] = value[3]
@@ -387,88 +286,19 @@ class Colony:
     ####################################################################
     def general_options(self):
 
-        self.screen.fill(pygame.Color("cadetblue4"))
+        self.screen.fill(settings.cBkg_highlighted)
 
-        frame_icon = disputil.loadIcon("Frame", settings.iconf)
-        frame_icon = pygame.transform.smoothscale(frame_icon, (32, 32))
-        check_icon = disputil.loadIcon("Check", settings.iconf)
-        check_icon = pygame.transform.smoothscale(check_icon, (32, 32))
+        tx, ty = disputil.DrawText(self.screen, settings.options, self.title_fontObj, settings.options_title_color,
+                                   blit=False)
+        disputil.DrawText(self.screen, settings.options, self.title_fontObj, settings.options_title_color, blit=True,
+                          x=self.xmax / 2 - tx / 2, y=self.ygap)
 
-        done = False
         text = ["Initial Specimen Number", "Show Icons", "Show Values", "Food Mode Activated", "Food Growth Ratio", "Show Terrain", "Logging"]
+        tip = [None, None, None, None, settings.food_growth_tip, None, None]
         value = [self.init_bacteria_number, self.show_icons, self.show_values, self.food_activated, self.food_growth_gap, self.show_terrain, self.logging]
-        changed = [True, True, True, True, True, True, True]
-        box = ["", "", "", "", "", "", ""]
-        firstRun = True
+        rect = (self.xgap * 10, ty + self.ygap, self.xmax*0.8, self.ymax*0.8)
 
-        tx, ty = disputil.DrawText(self.screen,settings.options, self.title_fontObj, settings.cOptions_title,
-                                   blit=False)
-        disputil.DrawText(self.screen, settings.options, self.title_fontObj, settings.cOptions_title,
-                          blit=True, x=self.xmax/2 - tx/2, y=self.ygap)
-
-        x = self.xgap * 10
-        y = ty + self.ygap
-        ix = x + tx + self.xgap
-        init_iy = y + self.ymargin
-
-        for i in range(0, len(text)):
-            tx, ty = disputil.DrawText(self.screen, text[i], self.presskey_fontObj, settings.cOptions_text,
-                                       blit=True, x=x, y=y)
-            if i == 4:
-                disputil.DrawText(self.screen, settings.food_growth_tip, self.info_fontObj, settings.cOptions_text,
-                                  blit=True, x=x, y=y+ty*0.8)
-            y = y + ty + self.ygap*1.5
-
-
-        pygame.draw.rect(self.screen, settings.cButton, (self.xmax / 2 - 100, self.ymax - 50 - self.ymargin, 200, 50))
-        tx, ty = disputil.DrawText(self.screen, settings.options_button, self.presskey_fontObj, settings.cButton_text,
-                                   blit=False)
-        disputil.DrawText(self.screen, settings.options_button, self.presskey_fontObj, settings.cButton_text,
-                          blit=True, x=self.xmax / 2 - tx / 2, y=self.ymax - 50 - self.ymargin)
-        button = pygame.Rect((self.xmax / 2 - 100, self.ymax - 50 - self.ymargin, 200, 50))
-
-        while not done:
-
-            for i in range(0, len(value)):
-                if changed[i]:
-                    iy = init_iy + (ty + self.ygap*1.5) * i
-                    if type(value[i]) is int and (firstRun or changed[i]):
-                        disputil.DrawText(self.screen, str(value[i]), self.presskey_fontObj, pygame.Color("white"),
-                                          blit=True, x=ix, y=iy)
-                        box[i] = pygame.Rect(ix, iy, 100, 50)
-                        if not firstRun:
-                            value[i] = disputil.get_input_box_value(self.screen, ix, iy, str(value[i]))
-                    elif type(value[i]) is bool:
-                        pygame.draw.rect(self.screen, pygame.Color("cadetblue4"), (ix, iy, 32, 32))
-                        self.screen.blit(frame_icon, (ix, iy))
-                        if not firstRun:
-                            if value[i]:
-                                value[i] = False
-                            else:
-                                value[i] = True
-                        if value[i]:
-                            self.screen.blit(check_icon, (ix, iy))
-                        box[i] = pygame.Rect(ix, iy, 32, 32)
-                    update_disp = True
-                    changed[i] = False
-
-            if firstRun or update_disp:
-                pygame.display.update()
-                firstRun = False
-                update_disp = False
-
-            event = disputil.event_loop()
-            if event.get("Type") == pygame.MOUSEBUTTONDOWN:
-                for i in range(0, len(box)):
-                    if box[i].collidepoint(event.get("Pos")):
-                        changed[i] = True
-                if button.collidepoint(event.get("Pos")):
-                    done = True
-            elif event.get("Type") == pygame.KEYDOWN:
-                if event.get("Key") == pygame.K_RETURN:
-                    done = True
-
-            time.sleep(0.05)
+        value = self.get_options(text, tip, value, rect)
 
         self.init_bacteria_number = int(value[0])
         self.show_icons = value[1]
@@ -479,6 +309,105 @@ class Colony:
         self.logging = value[6]
 
         return
+
+    ####################################################################
+    def get_options(self, text, tip, value, rect):
+
+        x, y, ex, ey = rect
+
+        frame_icon = disputil.loadIcon("Frame", settings.icons_folder)
+        frame_icon = pygame.transform.smoothscale(frame_icon, (settings.frame_check_scale, settings.frame_check_scale))
+        check_icon = disputil.loadIcon("Check", settings.icons_folder)
+        check_icon = pygame.transform.smoothscale(check_icon, (settings.frame_check_scale, settings.frame_check_scale))
+
+        done = False
+        first_run = True
+        event_box = None
+        changed = [True] * len(text)
+        box = [""] * len(text)
+
+        ix = x + self.xgap*10 + self.xgap
+        init_iy = y + self.ymargin
+
+        for i in range(0, len(text)):
+            tx, ty = disputil.DrawText(self.screen, text[i], self.presskey_fontObj,
+                                       settings.options_color, blit=True, x=x, y=y)
+
+            if tip[i] is not None:
+                disputil.DrawText(self.screen, tip[i], self.info_fontObj, settings.options_color,
+                                  blit=True, x=x, y=y+ty*0.8)
+            y = y + ty + self.ygap
+
+        rect = (self.xmax / 2 - int(self.xmax * 100 / 1280),
+                self.ymax - int(self.ymax * 50 / 800) - self.ymargin,
+                int(self.xmax * 200 / 1280), int(self.ymax * 50 / 800))
+        pygame.draw.rect(self.screen, settings.cButton, rect)
+        tx, ty = disputil.DrawText(self.screen, settings.options_button, self.presskey_fontObj, settings.button_text_color,
+                                   blit=False)
+        disputil.DrawText(self.screen, settings.options_button, self.presskey_fontObj, settings.button_text_color,
+                          blit=True, x=self.xmax / 2 - tx / 2, y=rect[1])
+        button = pygame.Rect(rect)
+
+        while not done:
+
+            for i in range(0, len(value)):
+                if changed[i]:
+                    iy = init_iy + (ty + self.ygap) * i
+                    if type(value[i]) is int or type(value[i]) is str:
+                        rect = (ix, iy, int(self.xmax * 300 / 1280), int(self.ymax * 50 / 800))
+                        if first_run:
+                            disputil.DrawText(self.screen, str(value[i]), self.presskey_fontObj, settings.options_color,
+                                              blit=True, x=ix, y=iy)
+                            box[i] = pygame.Rect(rect)
+                        else:
+                            value[i], event_box, input_box = disputil.get_input_box_value(self.screen, rect, font=settings.fonts_folder+settings.presskey_font, font_size=settings.presskey_font_size, text=str(value[i]))
+                            pygame.draw.rect(self.screen, settings.cBkg_highlighted, rect)
+                            disputil.DrawText(self.screen, str(value[i]), self.presskey_fontObj, settings.options_color,
+                                              blit=True, x=ix, y=iy)
+
+                    elif type(value[i]) is bool:
+                        pygame.draw.rect(self.screen, settings.cBkg_highlighted, (ix-5, iy-5, 32+10, 32+10))
+                        self.screen.blit(frame_icon, (ix, iy))
+                        if first_run:
+                            box[i] = pygame.Rect(ix, iy, 32, 32)
+                        else:
+                            box[i] = pygame.Rect(ix, iy, 32, 32)
+                            if value[i]:
+                                value[i] = False
+                            else:
+                                value[i] = True
+                        if value[i]:
+                            self.screen.blit(check_icon, (ix + 5, iy - 5))
+                        rect = (ix, iy, 32, 32)
+                    update_disp = True
+                    changed[i] = False
+
+            if first_run or update_disp:
+                if not first_run and rect is not None:
+                    pygame.display.update(rect)
+                else:
+                    pygame.display.update()
+                first_run = False
+                update_disp = False
+
+            if event_box is not None and event_box.get("Type") == pygame.MOUSEBUTTONDOWN:
+                event = event_box
+                event_box = None
+            else:
+                event = disputil.event_loop()
+            if event.get("Type") == pygame.MOUSEBUTTONDOWN:
+                for i in range(0, len(box)):
+                    if box[i].collidepoint(event.get("Pos")):
+                        changed[i] = True
+                if button.collidepoint(event.get("Pos")):
+                    done = True
+            elif event.get("Type") == pygame.KEYDOWN:
+                if event.get("Key") == pygame.K_RETURN:
+                    done = True
+
+            time.sleep(0.01)
+
+        return value
 
     ####################################################################
     def create_terrain(self):
@@ -493,7 +422,7 @@ class Colony:
     def grow_terrain(self):
 
         if self.food_activated:
-            self.screen.fill(pygame.Color("darkslategrey"))
+            self.screen.fill(settings.cTerrain)
 
             for i in range(self.xmin, self.xmax):
                 for j in range(self.ymin, self.ymax):
@@ -502,7 +431,8 @@ class Colony:
                             self.terrain_type[i][j] = "organic"
                         else:
                             self.terrain_age[i][j] += 1
-                    if self.food_activated and self.show_terrain and self.terrain_type[i][j] == "ground":
+                    if self.food_activated and self.show_terrain and \
+                            self.terrain_type[i][j] != "ground":
                         self.screen.set_at((i, j), settings.cBkg)
 
             # pygame.display.update()
@@ -510,14 +440,15 @@ class Colony:
         return
 
     ####################################################################
-    def create_colony(self):
+    def create(self):
 
         colony = []
         for i in range(0, len(self.chosen_fauna)):
             for j in range(0, int(self.init_bacteria_number / len(self.chosen_fauna))):
                 colony.append(myColony.birth(self.fauna[self.chosen_fauna[i]], i))
-            self.icon.append(disputil.loadIcon(self.fauna[self.chosen_fauna[i]]["Icon File"], settings.iconf))
+            self.icon.append(disputil.loadIcon(self.fauna[self.chosen_fauna[i]]["Icon File"], settings.icons_folder))
 
+        print()
         print("COLONY CREATED with %s specimen" % self.init_bacteria_number)
         print("Food mode:", self.food_activated)
         print("Food Growth:", self.food_growth_gap)
@@ -525,6 +456,8 @@ class Colony:
             ratio = int((self.init_bacteria_number / len(self.chosen_fauna)) / self.init_bacteria_number * 100)
             print(self.fauna[self.chosen_fauna[i]]["Name"], ratio, "%", "| Category:", self.fauna[self.chosen_fauna[i]]["Category"], "| Reproduction:", self.fauna[self.chosen_fauna[i]]["Reproduction"], "| Starvation Limit:", self.fauna[self.chosen_fauna[i]]["Starvation Limit"], "| Gestation Gap:",self.fauna[self.chosen_fauna[i]]["Gestation Gap"])
         print()
+
+        random.shuffle(colony)
 
         return colony
 
@@ -535,6 +468,8 @@ class Colony:
         bacteria["Status"] = "alive"
         if bacteria["Reproduction"] == "sex":
             bacteria["Gender"] = random.choice(settings.genders)
+        else:
+            bacteria["Gender"] = "both"
         bacteria["Position"] = random.randint(self.xmin, self.xmax), random.randint(self.ymin, self.ymax)
         bacteria["Size"] = bacteria_settings["Birth Size"]
         bacteria["Speed"] = min(10, bacteria_settings["Speed"])
@@ -544,8 +479,10 @@ class Colony:
         bacteria["Maturity Init Point"] = int(bacteria["Longevity"] * 0.2)
         bacteria["Maturity End Point"] = int(bacteria["Longevity"] * 0.8)
         bacteria["Age"] = random.randint(0, int(bacteria_settings["Maturity Init Point"]/4))
-        bacteria["Growth Gap"] = int((bacteria["Maturity Init Point"] - bacteria["Age"]) / bacteria["Maturity Size"])
-        bacteria["Starvation Limit"] = min(bacteria["Starvation Limit"], self.food_growth_gap - 1)
+        if bacteria["Growth Gap"] is None:
+            bacteria["Growth Gap"] = int((bacteria["Maturity Init Point"] - bacteria["Age"]) / bacteria["Maturity Size"])
+        if bacteria["Category"] == "prey":
+            bacteria["Starvation Limit"] = min(bacteria["Starvation Limit"], self.food_growth_gap - 1)
         bacteria["Last Dinner"] = 0
         bacteria["Last Gestation"] = bacteria["Gestation Gap"]
         bacteria["Icon Index"] = icon
@@ -553,57 +490,7 @@ class Colony:
         return bacteria
 
     ####################################################################
-    def draw(self, colony):
-
-        if not self.food_activated or not self.show_terrain:
-            self.screen.fill(settings.cBkg)
-
-        for i in range(0, len(colony)):
-            if colony[i]["Status"] == "alive":
-                if not self.show_icons or colony[i]["Icon Index"] is None:
-                    pygame.draw.circle(self.screen, colony[i]["Color"], colony[i]["Position"], int(colony[i]["Size"]), 0)
-                else:
-                    icon = pygame.transform.smoothscale(self.icon[colony[i]["Icon Index"]],
-                                                        (int(colony[i]["Size"] * 2), int(colony[i]["Size"] * 2)))
-                    if colony[i]["Rotate"]:
-                        icon = pygame.transform.rotate(icon, random.choice([0, 90, 180, 270]))
-                    self.screen.blit(icon,
-                                     (colony[i]["Position"][0] - colony[i]["Size"],
-                                      colony[i]["Position"][1] - colony[i]["Size"]))
-                if self.show_values:
-                    if self.show_icons:
-                        x = colony[i]["Position"][0] - colony[i]["Size"]
-                        y = colony[i]["Position"][1] - colony[i]["Size"] - settings.values_font_size
-                    else:
-                        x = colony[i]["Position"][0] - colony[i]["Size"]*2
-                        y = colony[i]["Position"][1] - settings.values_font_size / 2
-                    disputil.DrawText(self.screen, str(colony[i]["Size"])+", "+str(colony[i]["Age"]),
-                                      self.fontObj, pygame.Color("white"), blit=True, x=x, y=y)
-
-        pygame.display.update()
-
-        return
-
-    ####################################################################
-    def move(self, colony):
-
-        for i in range(0, len(colony)):
-            if colony[i]["Next Run"] <= 0:
-                direction = random.choice(settings.directions)
-                colony[i]["Last Direction"] = direction
-                colony[i]["Next Run"] = random.randint(1, colony[i]["Max Run"])
-            else:
-                direction = colony[i]["Last Direction"]
-                colony[i]["Next Run"] -= 1
-
-            x = int((colony[i]["Position"][0] + direction[0] * colony[i]["Size"] * (colony[i]["Speed"]/10))) % settings.display_size[0]
-            y = int((colony[i]["Position"][1] + direction[1] * colony[i]["Size"] * (colony[i]["Speed"]/10))) % settings.display_size[1]
-            colony[i]["Position"] = (x, y)
-
-        return colony
-
-    ####################################################################
-    def check(self, colony):
+    def evolve(self, colony):
 
         end_colony = []
 
@@ -611,8 +498,14 @@ class Colony:
             son = None
             eaten = False
 
+            self.draw(colony[i], i, len(colony))
+
             colony[i] = self.check_age(colony[i])
+
             if colony[i]["Status"] == "alive":
+
+                colony[i] = self.move(colony[i])
+
                 if colony[i]["Reproduction"] == "mitosis":
                     son, colony[i], foo = self.check_reproduction(colony[i])
 
@@ -642,6 +535,38 @@ class Colony:
         return end_colony
 
     ####################################################################
+    def draw(self, bacteria, i, colony_size):
+
+        if i == 0 and (not self.food_activated or not self.show_terrain):
+            self.screen.fill(settings.cBkg)
+
+        if bacteria["Status"] == "alive":
+            if not self.show_icons or bacteria["Icon Index"] is None:
+                pygame.draw.circle(self.screen, bacteria["Color"], bacteria["Position"], int(bacteria["Size"]), 0)
+            else:
+                icon = self.icon[bacteria["Icon Index"]]
+                ix, iy = icon.get_size()
+                if int(bacteria["Size"] * 2) != ix or int(bacteria["Size"] * 2) != iy:
+                    icon = pygame.transform.smoothscale(icon, (int(bacteria["Size"] * 2), int(bacteria["Size"] * 2)))
+                if bacteria["Rotate"]:
+                    icon = pygame.transform.rotate(icon, random.choice([0, 30, 60, 90, 120, 150, 180, 210, 240, 270]))
+                self.screen.blit(icon, (bacteria["Position"][0] - bacteria["Size"], bacteria["Position"][1] - bacteria["Size"]))
+            if self.show_values:
+                if self.show_icons:
+                    x = bacteria["Position"][0] - bacteria["Size"]
+                    y = bacteria["Position"][1] - bacteria["Size"] - settings.values_font_size
+                else:
+                    x = bacteria["Position"][0] - bacteria["Size"]*2
+                    y = bacteria["Position"][1] - settings.values_font_size / 2
+                disputil.DrawText(self.screen, str(bacteria["Size"])+", "+str(bacteria["Age"]),
+                                  self.fontObj, pygame.Color("white"), blit=True, x=x, y=y)
+
+        if i == (colony_size - 1):
+            pygame.display.update()
+
+        return
+
+    ####################################################################
     def check_age(self, bacteria):
 
         if bacteria["Age"] > bacteria["Longevity"]:
@@ -650,6 +575,25 @@ class Colony:
                 print(bacteria["Name"], "died of old at age", bacteria["Age"])
         else:
             bacteria["Age"] += 1
+
+        return bacteria
+
+    ####################################################################
+    def move(self, bacteria):
+
+        if bacteria["Next Run"] <= 0:
+            direction = random.choice(settings.directions)
+            bacteria["Last Direction"] = direction
+            bacteria["Next Run"] = random.randint(1, bacteria["Max Run"])
+        else:
+            direction = bacteria["Last Direction"]
+            bacteria["Next Run"] -= 1
+
+        x = int((bacteria["Position"][0] + direction[0] * bacteria["Size"] * (bacteria["Speed"] / 10))) % \
+            settings.display_size[0]
+        y = int((bacteria["Position"][1] + direction[1] * bacteria["Size"] * (bacteria["Speed"] / 10))) % \
+            settings.display_size[1]
+        bacteria["Position"] = (x, y)
 
         return bacteria
 
@@ -696,9 +640,9 @@ class Colony:
                     bacteria2["Last Gestation"] = 0
                 if settings.logging_verbose:
                     print(bacteria1["Name"], bacteria1["Gender"], ", REPRODUCED by sex at age:", bacteria1["Age"],
-                        "After Gestation:", bacteria1["Last Gestation"], "over", bacteria1["Gestation Gap"], "with",
-                        bacteria2["Name"], bacteria2["Gender"], "at age:", bacteria2["Age"], "After Gestation:",
-                        bacteria2["Last Gestation"], "over", bacteria2["Gestation Gap"])
+                          "After Gestation:", bacteria1["Last Gestation"], "over", bacteria1["Gestation Gap"], "with",
+                          bacteria2["Name"], bacteria2["Gender"], "at age:", bacteria2["Age"], "After Gestation:",
+                          bacteria2["Last Gestation"], "over", bacteria2["Gestation Gap"])
             else:
                 if bacteria1["Gender"] == "female":
                     bacteria1["Last Gestation"] += 1
@@ -706,9 +650,9 @@ class Colony:
                     bacteria2["Last Gestation"] += 1
                 if settings.logging_verbose:
                     print(bacteria1["Name"], bacteria1["Gender"], ", COULDN'T REPRODUCE by sex at age:", bacteria1["Age"],
-                      "After Gestation:", bacteria1["Last Gestation"], "over", bacteria1["Gestation Gap"], "with",
-                      bacteria2["Name"], bacteria2["Gender"], "at age:", bacteria2["Age"], "After Gestation:",
-                      bacteria2["Last Gestation"], "over", bacteria2["Gestation Gap"])
+                          "After Gestation:", bacteria1["Last Gestation"], "over", bacteria1["Gestation Gap"], "with",
+                          bacteria2["Name"], bacteria2["Gender"], "at age:", bacteria2["Age"], "After Gestation:",
+                          bacteria2["Last Gestation"], "over", bacteria2["Gestation Gap"])
 
         return son, bacteria1, bacteria2
 
@@ -726,7 +670,11 @@ class Colony:
                         ((bacteria1["Hunt Randomize"] and random.randint(1, bacteria1["Hunt Success"])) != 1 or
                         not bacteria1["Hunt Randomize"]):
                     bacteria2["Status"] = "dead"
-                    bacteria1["Size"] = min(bacteria1["Size"] + bacteria2["Size"], bacteria1["Max Size"])
+                    if bacteria1["Overgrowth"]:
+                        bacteria1["Size"] = min(bacteria1["Size"] + bacteria2["Size"],
+                                                max(bacteria1["Max Size"], bacteria1["Maturity Size"]))
+                    else:
+                        bacteria1["Size"] = min(bacteria1["Size"] + bacteria2["Size"], bacteria1["Maturity Size"])
                     if settings.logging_verbose:
                         print(bacteria1["Name"], "Age:", bacteria1["Age"], "Size:", bacteria1["Size"],
                               "Hunt Randomize:", bacteria1["Hunt Randomize"], "Hunt Success:", bacteria1["Hunt Success"],
@@ -812,24 +760,26 @@ class Colony:
             self.keyP = event["Key"]
 
             if event["Key"] == pygame.K_c:
-                icon = disputil.loadIcon("Lightning", settings.iconf)
-                ix, iy = icon.get_size()
-                icon = pygame.transform.smoothscale(icon, (256, 256))
+                icon = disputil.loadIcon("Lightning", settings.icons_folder)
+                icon = pygame.transform.smoothscale(icon, (settings.cataclism_icon_scale, settings.cataclism_icon_scale))
                 x = random.randint(50, self.xmax - 50)
                 y = random.randint(50, self.ymax - 50)
                 self.screen.blit(icon, (x,y))
-                pygame.display.update((x, y, 256, 256))
+                pygame.display.update((x, y, settings.cataclism_icon_scale, settings.cataclism_icon_scale))
+                casualties = 0
                 for i in range(0, len(colony)):
-                    if x <= colony[i]["Position"][0] <= (x + 256*0.8) and \
-                            y <= colony[i]["Position"][1] <= (y + 256*0.8):
+                    if x <= colony[i]["Position"][0] <= (x + settings.cataclism_icon_scale*0.8) and \
+                            y <= colony[i]["Position"][1] <= (y + settings.cataclism_icon_scale*0.8):
                         colony[i]["Status"] = "dead"
+                        casualties += 1
                 time.sleep(1)
+                print("FATAL CATACLISM!!!! caused %s casualties. To be or not to be..." % casualties)
 
             if event["Key"] == pygame.K_r:
                 importlib.reload(settings)
                 pygame.display.quit()
                 self.__init__()
-                self.create_colony()
+                self.create()
 
         return colony
 
@@ -837,16 +787,14 @@ class Colony:
 ####################################################################
 myColony = Colony()
 
-if settings.intro: myColony.intro()
+if settings.show_intro: myColony.intro()
 myColony.create_terrain()
-colony = myColony.create_colony()
+colony = myColony.create()
 
 while True:
 
     myColony.grow_terrain()
-    myColony.draw(colony)
-    colony = myColony.move(colony)
-    colony = myColony.check(colony)
+    colony = myColony.evolve(colony)
 
     if not colony: break
     colony = myColony.catch_action(disputil.event_loop(), colony)

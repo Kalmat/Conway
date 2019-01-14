@@ -191,16 +191,18 @@ def DrawText(screen, text, font, fcolor, blit=False, x=0, y=0, outline=None, owi
         if outline == "FadeIn":
             rect = (x, y, rtx, rty)
             srf = pygame.Surface((rect[2], rect[3]))
+            srf.fill(ocolor)
             srf.blit(rtext, (0, 0))
             img = Screenshot(srf, (0, 0, rect[2], rect[3]))
-            FadeIn(screen, img, rect)
+            FadeIn(screen, img, rect, color_filter=(ocolor))
 
         if outline == "FadeOut":
             rect = (x, y, rtx, rty)
             srf = pygame.Surface((rect[2], rect[3]))
+            srf.fill(ocolor)
             srf.blit(rtext, (0, 0))
             img = Screenshot(srf, (0, 0, rect[2], rect[3]))
-            FadeOut(screen, img, rect)
+            FadeOut(screen, img, rect, color_filter=(ocolor))
 
         if outline != "FadeOut": screen.blit(rtext, (x, y))
 
@@ -211,7 +213,7 @@ def DrawText(screen, text, font, fcolor, blit=False, x=0, y=0, outline=None, owi
 
 
 ####################################################################
-def FadeIn(screen, img, rect, time=1, color_filter=(0, 0, 0)):
+def FadeIn(screen, img, rect, time=1.2, color_filter=(0, 0, 0)):
 
     clock = pygame.time.Clock()
     darken_factor = 255
@@ -415,13 +417,19 @@ def measure_temp(archOS):
 
 
 ####################################################################
-def get_input_box_value(screen, x, y, init_value):
+def get_input_box_value(screen, rect, back_color=pygame.Color('black'), line_color=pygame.Color('white'), line_thickness=2,
+             font="freesans", font_size=32, text='', text_color=pygame.Color('white'), init_text='Enter text',
+             init_text_color=pygame.Color('gray55')):
 
-    end_value, event_box, input_box = InputBox(screen, (x, y, 300, 50), init_text=str(init_value),
+    end_value, event_box, input_box = InputBox(screen=screen, rect=rect, back_color=back_color, line_color=line_color,
+                                               line_thickness=line_thickness, font=font, font_size=font_size, text=text,
+                                               text_color=text_color, init_text=init_text, init_text_color=init_text_color,
                                                draw=True, capture=False)
     done = False
     draw = False
     capture = True
+
+    final_event = event_box
 
     while not done:
 
@@ -431,7 +439,7 @@ def get_input_box_value(screen, x, y, init_value):
             elif event_box.get("Key") == pygame.K_TAB:
                 break
             elif event_box.get("Key") == pygame.K_ESCAPE:
-                end_value = str(init_value)
+                end_value = str(text)
                 draw = True
                 capture = False
                 done = True
@@ -441,13 +449,17 @@ def get_input_box_value(screen, x, y, init_value):
                 capture = False
                 done = True
 
-        end_value, event_box, input_box = InputBox(screen, (x, y, 300, 50), text=str(end_value), init_text="",
-                                                   draw=draw, capture=capture)
+        end_value, event_box, input_box = InputBox(screen=screen, rect=rect, back_color=back_color, line_color=line_color,
+                                               line_thickness=line_thickness, font=font, font_size=font_size, text=str(end_value),
+                                               text_color=text_color, init_text="", init_text_color=init_text_color,
+                                               draw=draw, capture=capture)
+        if capture:
+            final_event = event_box
 
         if done and (not end_value or end_value.isspace()):
-            end_value = str(init_value)
+            end_value = str(init_text)
 
-    return str(end_value)
+    return str(end_value), final_event, input_box
 
 
 ####################################################################
@@ -531,59 +543,51 @@ def InputBox(screen, rect, back_color=pygame.Color('black'), line_color=pygame.C
             draw = False
 
         # Save CPU
-        time.sleep(1./25)
+        time.sleep(0.01)
 
     return text, {'Type': etype, 'Key': ekey, 'Pos': epos}, box
+
 
 """
 # EXAMPLE of two InputBox with "re-enter" function
 
-rect1 = (0, 100, 500, 65)
-rect2 = (0, 0, 500, 65)
+while not done
+    
+    if first_run:
+        input_value1, event_box, input_box = disputil.get_input_box_value(self.screen, rect1, 
+                                                                    init_text=str(value1), draw=True, capture=False)
+        box1 = pygame.Rect(rect1)
 
-# Box 1 - Draw, but not capture (inactive)
-text1, event_box, box1 = disputil.InputBox(self.screen, rect1, draw=True, capture=False)
-
-# Box 2 - Draw and capture (active. Set just 1 active box, and place it at the end)
-text2, event_box, box2 = disputil.InputBox(self.screen, rect2, draw=True, capture=True)
-
-box_active = 2
-
-# Capture loop
-while True:
-    # Evaluate InputBox exit event
-    if event_box.get("Type") == pygame.KEYDOWN:
-        if event_box.get("Key") == pygame.K_RETURN:
-            break
-        elif event_box.get("Key") == pygame.K_TAB:
-            if box_active == 1:
-                box_active = 2
-            elif box_active == 2:
-                box_active = 1
-        elif event_box.get("Key") == pygame.K_TAB and pygame.key.get_mods() & pygame.KMOD_SHIFT:
-            if box_active == 1:
-                box_active = 2
-            elif box_active == 2:
-                box_active = 1
-        elif event_box.get("Key") == pygame.K_ESCAPE:
-            text1 == text2 == ""
-            break
-    elif event_box.get("Type") == pygame.MOUSEBUTTONDOWN:
-        box_active = None
-        if box1.collidepoint(event_box.get("Pos")):
-            box_active = 1
-        elif box2.collidepoint(event_box.get("Pos")):
-            box_active = 2
+        input_value1, event_box, input_box = disputil.get_input_box_value(self.screen, rect2, 
+                                                                    init_text=str(value2), draw=True, capture=False)
+        box2 = pygame.Rect(rect2)
+        
+        button = pygame.Rect(button_rect)
+                                                                    
     else:
-        box_active = None
+        if changed1:
+            input_value1, event_box, input_box = disputil.get_input_box_value(self.screen, rect1, 
+                                                                    init_text=str(value[i]), draw=False, capture=True)
+        elif changed2:
+            input_value2, event_box, input_box = disputil.get_input_box_value(self.screen, (ix, iy, 300, 50), 
+                                                                    init_text=str(value[i]), draw=False, capture=True)
+        
+        if event_box is not None and event_box.get("Type") == pygame.MOUSEBUTTONDOWN:
+            event = event_box
+            event_box = None
+        else:
+            event = event_loop()
 
-    # Re-enter proper InputBox to continue capturing text (Note draw/capture values combination)
-    if box_active == 1:
-        text1, event_box, box1 = disputil.InputBox(self.screen, rect1, text=text1, draw=False, capture=True)
-    elif box_active == 2:
-        text2, event_box, box2 = disputil.InputBox(self.screen, rect2, text=text2, draw=False, capture=True)
-    else:
-        event_box = disputil.event_loop()
-
-print(text1, text2)
+        if event.get("Type") == pygame.MOUSEBUTTONDOWN:
+            if box1.collidepoint(event.get("Pos")):
+                changed1 = True
+            elif box2.collidepoint(event.get("Pos")):
+                changed2 = True
+            elif button.collidepoint(event.get("Pos")):
+                done = True
+        elif event.get("Type") == pygame.KEYDOWN:
+            if event.get("Key") == pygame.K_RETURN:
+                done = True
+            
+    time.sleep(0.05)
 """
