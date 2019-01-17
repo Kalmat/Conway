@@ -34,6 +34,7 @@ class Colony:
         self.food_growth_gap = settings.food_growth_gap
         self.show_terrain = settings.show_terrain
         self.logging = settings.logging
+        self.logging_verbose = settings.logging_verbose
 
         self.fontObj = disputil.LoadFont(settings.fonts_folder+settings.values_font, settings.values_font_size, 0)
         self.welcome_fontObj = disputil.LoadFont(settings.fonts_folder+settings.welcome_font, settings.welcome_font_size, 0)
@@ -43,13 +44,16 @@ class Colony:
         self.info_fontObj = disputil.LoadFont(settings.fonts_folder+settings.info_font, settings.info_font_size, 0)
 
         self.first_run = True
-        self.chosen_fauna = settings.colony_diversity
+        self.chosen_fauna = []
+        self.colony_diversity = None
         self.icon = []
-        self.terrain_type = None
-        self.terrain_age = None
+        self.terrain_type = []
+        self.terrain_age = []
         self.colony_age = 0
         self.average = 0
         self.keyP = ""
+        self.predators = 0
+        self.preys = 0
 
     ####################################################################
     def intro(self):
@@ -66,6 +70,12 @@ class Colony:
 
         disputil.DrawText(self.screen, settings.welcome, self.welcome_fontObj, settings.welcome_color,
                           blit=True, x=self.xmax*0.1 + self.xgap, y=int(self.ymax*1/3.2))
+
+        arrow = disputil.loadIcon(settings.quit_icon, settings.icons_folder)
+        arrow = pygame.transform.smoothscale(arrow, (settings.quit_icon_scale, settings.quit_icon_scale))
+        bx, by = arrow.get_size()
+        self.screen.blit(arrow, (self.xmax/2 - bx/2, self.ymax - self.ymargin - by))
+        back_box = pygame.Rect((self.xmax/2 - bx/2, self.ymax - self.ymargin - by, bx, by))
 
         pygame.display.update()
 
@@ -87,22 +97,30 @@ class Colony:
         tx, ty = disputil.DrawText(self.screen, settings.presskey, self.presskey_fontObj, settings.presskey_color,
                                    blit=False)
         disputil.DrawText(self.screen, settings.presskey, self.presskey_fontObj, settings.presskey_color,
-                          blit=True, x=self.xmax/2 - tx/2, y=self.ymax*0.85)
-        rect.append((self.xmax/2 - tx/2, self.ymax*0.85, tx, ty))
+                          blit=True, x=self.xmax/2 - tx/2, y=self.ymax*0.70)
+        rect.append((self.xmax/2 - tx/2, self.ymax*0.70, tx, ty))
 
         pygame.display.update(rect)
 
         event = disputil.event_loop()
-        while event.get("Type") not in (pygame.KEYDOWN, pygame.MOUSEBUTTONDOWN):
+        while True:
+            if event.get("Type") == pygame.MOUSEBUTTONDOWN:
+                if back_box.collidepoint(event.get("Pos")):
+                    pygame.quit()
+                    exit()
+                else:
+                    break
+            elif event.get("Type") == pygame.KEYDOWN:
+                break
             event = disputil.event_loop()
             time.sleep(0.01)
-
-        self.choose_fauna()
 
         return
 
     ####################################################################
     def choose_fauna(self):
+
+        continue_program = True
 
         self.chosen_fauna = []
         done = False
@@ -207,13 +225,14 @@ class Colony:
             event = disputil.event_loop()
             if event.get("Type") == pygame.MOUSEBUTTONDOWN:
                 if back_box.collidepoint(event.get("Pos")):
-                    self.intro()
-                    return
+                    continue_program = False
+                    return continue_program
                 if options_box.collidepoint(event.get("Pos")):
                     self.general_options()
                     first_run = True
                     changed = [True, True, True, True]
                     draw_button = True
+                    if self.colony_diversity is not None: chosen_count = 1
                     pygame.draw.rect(self.screen, pygame.Color("cadetblue"),
                                      (self.xmin, self.ymin, self.xmax, self.ymax))
                     pygame.draw.rect(self.screen, pygame.Color("black"),
@@ -246,11 +265,14 @@ class Colony:
 
             time.sleep(0.01)
 
-        for i in range(0, len(chosen)):
-            if chosen[i]:
-                self.chosen_fauna.append(i)
+        if self.colony_diversity is None:
+            for i in range(0, len(chosen)):
+                if chosen[i]:
+                    self.chosen_fauna.append(i)
+        else:
+            self.chosen_fauna = self.colony_diversity
 
-        return
+        return continue_program
 
     ####################################################################
     def bacteria_options(self, bacteria):
@@ -266,13 +288,22 @@ class Colony:
         disputil.DrawText(self.screen, bacteria["Name"], self.name_fontObj, settings.options_title_color, blit=True, x=self.xmax/2 - tx/2, y=self.ygap + iy*0.8)
 
         text = ["Category", "Food", "Starvation Limit", "Reproduction", "Gestation Gap", "Speed", "Longevity", "Max Size"]
-        tip = [settings.category_tip, settings.food_tip, settings.starvation_tip, settings.reproduction_tip, None, None, None, None]
+        tip = [settings.category_tip, settings.food_tip, settings.starvation_tip, settings.reproduction_tip, None, settings.speed_tip, None, None]
         value = [bacteria["Category"], bacteria["Food"], bacteria["Starvation Limit"], bacteria["Reproduction"], bacteria["Gestation Gap"], bacteria["Speed"], bacteria["Longevity"], bacteria["Max Size"]]
-        rect = (self.xgap * 10, iy + ty + self.ygap, self.xmax*0.8, self.ymax*0.8)
+        rect = (self.xgap * 10, iy + ty + self.ygap*0.5, self.xmax*0.8, self.ymax*0.8)
 
-        value = self.get_options(text, tip, value, rect)
+        if bacteria["Category"] in ("predator", "both"):
+            text.append("Overgrowth")
+            tip.append(None)
+            value.append(bacteria["Overgrowth"])
+            text.append("Hunt Success")
+            tip.append(settings.hunt_tip)
+            value.append(bacteria["Hunt Success"])
+            value = self.get_options(text, tip, value, rect, self.ygap * 0.40)
+        else:
+            value = self.get_options(text, tip, value, rect, self.ygap*0.75)
 
-        bacteria["Category"],  = value[0]
+        bacteria["Category"] = value[0]
         bacteria["Food"] = value[1]
         bacteria["Starvation Limit"] = int(value[2])
         bacteria["Reproduction"] = value[3]
@@ -280,6 +311,14 @@ class Colony:
         bacteria["Speed"] = int(value[5])
         bacteria["Longevity"] = int(value[6])
         bacteria["Max Size"] = int(value[7])
+        if bacteria["Category"] in ("predator", "both"):
+            bacteria["Overgrowth"] = value[8]
+            bacteria["Hunt Success"] = int(value[9])
+            if bacteria["Hunt Success"] < 1:
+                bacteria["Hunt Randomize"] = False
+                bacteria["Hunt Success"] = 1
+            else:
+                bacteria["Hunt Randomize"] = True
 
         return bacteria
 
@@ -293,12 +332,12 @@ class Colony:
         disputil.DrawText(self.screen, settings.options, self.title_fontObj, settings.options_title_color, blit=True,
                           x=self.xmax / 2 - tx / 2, y=self.ygap)
 
-        text = ["Initial Specimen Number", "Show Icons", "Show Values", "Food Mode Activated", "Food Growth Ratio", "Show Terrain", "Logging"]
-        tip = [None, None, None, None, settings.food_growth_tip, None, None]
-        value = [self.init_bacteria_number, self.show_icons, self.show_values, self.food_activated, self.food_growth_gap, self.show_terrain, self.logging]
+        text = ["Initial Specimen Number", "Show Icons", "Show Values", "Food Mode Activated", "Food Growth Ratio", "Show Terrain", "Logging", "Verbose", "Colony Fauna (Advanced)"]
+        tip = [None, None, None, None, settings.food_growth_tip, None, None, None, settings.colony_diversity_tip]
+        value = [self.init_bacteria_number, self.show_icons, self.show_values, self.food_activated, self.food_growth_gap, self.show_terrain, self.logging, self.logging_verbose, settings.colony_diversity]
         rect = (self.xgap * 10, ty + self.ygap, self.xmax*0.8, self.ymax*0.8)
 
-        value = self.get_options(text, tip, value, rect)
+        value = self.get_options(text, tip, value, rect, self.ygap*0.75)
 
         self.init_bacteria_number = int(value[0])
         self.show_icons = value[1]
@@ -307,11 +346,16 @@ class Colony:
         self.food_growth_gap = int(value[4])
         self.show_terrain = value[5]
         self.logging = value[6]
+        self.logging_verbose = value[7]
+        if value[8] != settings.colony_diversity:
+            self.colony_diversity = value[8].split(",")
+            for i in range(0, len(self.colony_diversity)):
+                self.colony_diversity[i] = int(self.colony_diversity[i])
 
         return
 
     ####################################################################
-    def get_options(self, text, tip, value, rect):
+    def get_options(self, text, tip, value, rect, Ygap):
 
         x, y, ex, ey = rect
 
@@ -336,7 +380,7 @@ class Colony:
             if tip[i] is not None:
                 disputil.DrawText(self.screen, tip[i], self.info_fontObj, settings.options_color,
                                   blit=True, x=x, y=y+ty*0.8)
-            y = y + ty + self.ygap
+            y = y + ty + Ygap
 
         rect = (self.xmax / 2 - int(self.xmax * 100 / 1280),
                 self.ymax - int(self.ymax * 50 / 800) - self.ymargin,
@@ -352,7 +396,7 @@ class Colony:
 
             for i in range(0, len(value)):
                 if changed[i]:
-                    iy = init_iy + (ty + self.ygap) * i
+                    iy = init_iy + (ty + Ygap) * i
                     if type(value[i]) is int or type(value[i]) is str:
                         rect = (ix, iy, int(self.xmax * 300 / 1280), int(self.ymax * 50 / 800))
                         if first_run:
@@ -426,13 +470,14 @@ class Colony:
 
             for i in range(self.xmin, self.xmax):
                 for j in range(self.ymin, self.ymax):
+
                     if self.terrain_type[i][j] == "ground":
                         if self.terrain_age[i][j] > self.food_growth_gap:
                             self.terrain_type[i][j] = "organic"
                         else:
                             self.terrain_age[i][j] += 1
-                    if self.food_activated and self.show_terrain and \
-                            self.terrain_type[i][j] != "ground":
+
+                    if self.show_terrain and self.terrain_type[i][j] == "ground":
                         self.screen.set_at((i, j), settings.cBkg)
 
             # pygame.display.update()
@@ -443,18 +488,18 @@ class Colony:
     def create(self):
 
         colony = []
-        for i in range(0, len(self.chosen_fauna)):
-            for j in range(0, int(self.init_bacteria_number / len(self.chosen_fauna))):
-                colony.append(myColony.birth(self.fauna[self.chosen_fauna[i]], i))
-            self.icon.append(disputil.loadIcon(self.fauna[self.chosen_fauna[i]]["Icon File"], settings.icons_folder))
 
         print()
         print("COLONY CREATED with %s specimen" % self.init_bacteria_number)
         print("Food mode:", self.food_activated)
         print("Food Growth:", self.food_growth_gap)
+
         for i in range(0, len(self.chosen_fauna)):
-            ratio = int((self.init_bacteria_number / len(self.chosen_fauna)) / self.init_bacteria_number * 100)
-            print(self.fauna[self.chosen_fauna[i]]["Name"], ratio, "%", "| Category:", self.fauna[self.chosen_fauna[i]]["Category"], "| Reproduction:", self.fauna[self.chosen_fauna[i]]["Reproduction"], "| Starvation Limit:", self.fauna[self.chosen_fauna[i]]["Starvation Limit"], "| Gestation Gap:",self.fauna[self.chosen_fauna[i]]["Gestation Gap"])
+            for j in range(0, int(self.init_bacteria_number / len(self.chosen_fauna))):
+                colony.append(myColony.birth(self.fauna[self.chosen_fauna[i]], i))
+            self.icon.append(disputil.loadIcon(self.fauna[self.chosen_fauna[i]]["Icon File"], settings.icons_folder))
+
+            print(self.fauna[self.chosen_fauna[i]]["Name"], int((self.init_bacteria_number / len(self.chosen_fauna)) / self.init_bacteria_number * 100), "%", "| Category:", self.fauna[self.chosen_fauna[i]]["Category"], "| Reproduction:", self.fauna[self.chosen_fauna[i]]["Reproduction"], "| Starvation Limit:", self.fauna[self.chosen_fauna[i]]["Starvation Limit"], "| Gestation Gap:",self.fauna[self.chosen_fauna[i]]["Gestation Gap"])
         print()
 
         random.shuffle(colony)
@@ -472,18 +517,23 @@ class Colony:
             bacteria["Gender"] = "both"
         bacteria["Position"] = random.randint(self.xmin, self.xmax), random.randint(self.ymin, self.ymax)
         bacteria["Size"] = bacteria_settings["Birth Size"]
-        bacteria["Speed"] = min(10, bacteria_settings["Speed"])
+        bacteria["Speed"] = min(20, bacteria_settings["Speed"])
         bacteria["Last Move"] = 0
         bacteria["Next Run"] = random.randint(0, bacteria["Max Run"])
         bacteria["Last Direction"] = random.choice(settings.directions)
         bacteria["Maturity Init Point"] = int(bacteria["Longevity"] * 0.2)
         bacteria["Maturity End Point"] = int(bacteria["Longevity"] * 0.8)
         bacteria["Age"] = random.randint(0, int(bacteria_settings["Maturity Init Point"]/4))
+        if not bacteria["Overgrowth"]:
+            bacteria["Maturity Size"] = max(bacteria["Maturity Size"], bacteria["Max Size"])
         if bacteria["Growth Gap"] is None:
             bacteria["Growth Gap"] = int((bacteria["Maturity Init Point"] - bacteria["Age"]) / bacteria["Maturity Size"])
         if bacteria["Category"] == "prey":
             bacteria["Starvation Limit"] = min(bacteria["Starvation Limit"], self.food_growth_gap - 1)
         bacteria["Last Dinner"] = 0
+        if bacteria["Hunt Success"] < 1:
+            bacteria["Hunt Success"] = 1
+            bacteria["Hunt Randomize"] = False
         bacteria["Last Gestation"] = bacteria["Gestation Gap"]
         bacteria["Icon Index"] = icon
 
@@ -493,6 +543,8 @@ class Colony:
     def evolve(self, colony):
 
         end_colony = []
+        self.predators = 0
+        self.preys = 0
 
         for i in range(0, len(colony)):
             son = None
@@ -541,7 +593,7 @@ class Colony:
             self.screen.fill(settings.cBkg)
 
         if bacteria["Status"] == "alive":
-            if not self.show_icons or bacteria["Icon Index"] is None:
+            if not self.show_icons or self.icon[bacteria["Icon Index"]] is None:
                 pygame.draw.circle(self.screen, bacteria["Color"], bacteria["Position"], int(bacteria["Size"]), 0)
             else:
                 icon = self.icon[bacteria["Icon Index"]]
@@ -571,7 +623,7 @@ class Colony:
 
         if bacteria["Age"] > bacteria["Longevity"]:
             bacteria["Status"] = "dead"
-            if settings.logging_verbose:
+            if self.logging_verbose:
                 print(bacteria["Name"], "died of old at age", bacteria["Age"])
         else:
             bacteria["Age"] += 1
@@ -617,10 +669,11 @@ class Colony:
             if bacteria1["Maturity Init Point"] <= bacteria1["Age"] <= bacteria1["Maturity End Point"] and \
                     bacteria1["Last Gestation"] >= bacteria1["Gestation Gap"]:
                 son = self.birth(bacteria1, bacteria1["Icon Index"])
-                bacteria1["Last Gestation"] = 0
-                if settings.logging_verbose:
+                if self.logging_verbose:
+                    last = bacteria1["Last Gestation"]
+                    bacteria1["Last Gestation"] = 0
                     print(bacteria1["Name"], "reproduced by mitosis at age:", bacteria1["Age"], "Gestation:",
-                          bacteria1["Last Gestation"], "over", bacteria1["Gestation Gap"])
+                          last, "over", bacteria1["Gestation Gap"])
             else:
                 bacteria1["Last Gestation"] += 1
             bacteria2 = True
@@ -634,25 +687,29 @@ class Colony:
                      (bacteria1["Gender"] == "female" and bacteria2["Gender"] == "male") or \
                       bacteria1["Gender"] == "both" or bacteria2["Gender"] == "both"):
                 son = self.birth(bacteria1, bacteria1["Icon Index"])
+                last1 = bacteria1["Last Gestation"]
+                last2 = bacteria2["Last Gestation"]
                 if bacteria1["Gender"] == "female":
                     bacteria1["Last Gestation"] = 0
                 if bacteria2["Gender"] == "female":
                     bacteria2["Last Gestation"] = 0
-                if settings.logging_verbose:
+                if self.logging_verbose:
                     print(bacteria1["Name"], bacteria1["Gender"], ", REPRODUCED by sex at age:", bacteria1["Age"],
-                          "After Gestation:", bacteria1["Last Gestation"], "over", bacteria1["Gestation Gap"], "with",
+                          "After Gestation:", last1, "over", bacteria1["Gestation Gap"], "with",
                           bacteria2["Name"], bacteria2["Gender"], "at age:", bacteria2["Age"], "After Gestation:",
-                          bacteria2["Last Gestation"], "over", bacteria2["Gestation Gap"])
+                          last2, "over", bacteria2["Gestation Gap"])
             else:
+                last1 = bacteria1["Last Gestation"]
+                last2 = bacteria2["Last Gestation"]
                 if bacteria1["Gender"] == "female":
                     bacteria1["Last Gestation"] += 1
                 if bacteria2["Gender"] == "female":
                     bacteria2["Last Gestation"] += 1
-                if settings.logging_verbose:
+                if self.logging_verbose:
                     print(bacteria1["Name"], bacteria1["Gender"], ", COULDN'T REPRODUCE by sex at age:", bacteria1["Age"],
-                          "After Gestation:", bacteria1["Last Gestation"], "over", bacteria1["Gestation Gap"], "with",
+                          "After Gestation:", last1, "over", bacteria1["Gestation Gap"], "with",
                           bacteria2["Name"], bacteria2["Gender"], "at age:", bacteria2["Age"], "After Gestation:",
-                          bacteria2["Last Gestation"], "over", bacteria2["Gestation Gap"])
+                          last2, "over", bacteria2["Gestation Gap"])
 
         return son, bacteria1, bacteria2
 
@@ -667,26 +724,27 @@ class Colony:
                         bacteria2["Category"] != "predator" and \
                         (bacteria1["Size"] > bacteria2["Size"] or
                             (bacteria1["Size"] == bacteria2["Size"] and bacteria1["Age"] > bacteria2["Age"])) and \
-                        ((bacteria1["Hunt Randomize"] and random.randint(1, bacteria1["Hunt Success"])) != 1 or
+                        (((bacteria1["Hunt Randomize"] and random.randint(1, bacteria1["Hunt Success"])) != 1) or
                         not bacteria1["Hunt Randomize"]):
                     bacteria2["Status"] = "dead"
+                    size = bacteria1["Size"]
                     if bacteria1["Overgrowth"]:
                         bacteria1["Size"] = min(bacteria1["Size"] + bacteria2["Size"],
                                                 max(bacteria1["Max Size"], bacteria1["Maturity Size"]))
                     else:
                         bacteria1["Size"] = min(bacteria1["Size"] + bacteria2["Size"], bacteria1["Maturity Size"])
-                    if settings.logging_verbose:
-                        print(bacteria1["Name"], "Age:", bacteria1["Age"], "Size:", bacteria1["Size"],
+                    if self.logging_verbose:
+                        print(bacteria1["Name"], "Age:", bacteria1["Age"], "Size:", size,
                               "Hunt Randomize:", bacteria1["Hunt Randomize"], "Hunt Success:", bacteria1["Hunt Success"],
                               "| ATE |",
-                              bacteria2["Name"], "Age:", bacteria1["Age"], "Size:", bacteria1["Size"])
+                              bacteria2["Name"], "Age:", bacteria2["Age"], "Size:", bacteria2["Size"])
                     eaten = True
                 else:
-                    if settings.logging_verbose:
+                    if self.logging_verbose:
                         print(bacteria1["Name"], "Age:", bacteria1["Age"], "Size:", bacteria1["Size"],
                               "Hunt Randomize:", bacteria1["Hunt Randomize"], "Hunt Success:", bacteria1["Hunt Success"],
                               "| COULDN'T EAT |",
-                              bacteria2["Name"], "Age:", bacteria1["Age"], "Size:", bacteria1["Size"])
+                              bacteria2["Name"], "Age:", bacteria2["Age"], "Size:", bacteria2["Size"])
 
         elif self.food_activated:
             for i in range(0, int(bacteria1["Size"])):
@@ -711,9 +769,10 @@ class Colony:
                 bacteria["Last Dinner"] += 1
                 if bacteria["Last Dinner"] > bacteria["Starvation Limit"]:
                     bacteria["Status"] = "dead"
-                    if settings.logging_verbose:
+                    if self.logging_verbose:
                         print(bacteria["Name"], "died by starvation at age:", bacteria["Age"], "Size:", bacteria["Size"],
-                              "Last dinner:", bacteria["Last Dinner"], "Starvation Limit:", bacteria["Starvation Limit"])
+                              "Last dinner:", bacteria["Last Dinner"], "Starvation Limit:", bacteria["Starvation Limit"],
+                              "Maturity Init Point: ", bacteria["Maturity Init Point"])
 
         return bacteria
 
@@ -732,9 +791,17 @@ class Colony:
 
         if son is not None:
             colony.append(son)
+            if son["Category"] in ("predator", "both"):
+                self.predators += 1
+            else:
+                self.preys += 1
 
         if bacteria["Status"] == "alive":
             colony.append(bacteria)
+            if bacteria["Category"] in ("predator", "both"):
+                self.predators += 1
+            else:
+                self.preys += 1
 
         return colony
 
@@ -749,7 +816,52 @@ class Colony:
             self.average = int(((self.average * max(1, self.colony_age - 1)) + population) / self.colony_age)
             dif = int(((population - self.average) / self.average) * 100)
             if self.logging:
-                print("COLONY age: %d | population: %d | average: %d | dif: %d%%" % (self.colony_age, population, self.average, dif))
+                print("COLONY age: %d | population: %d (%d Preys / %d Predators) | average: %d | dif: %d%%" % (self.colony_age, population, self.preys, self.predators, self.average, dif))
+
+        return
+
+    ####################################################################
+    def death(self):
+
+        grave = disputil.loadIcon(settings.grave_img, settings.icons_folder, extension=".jpg")
+        grave = pygame.transform.smoothscale(grave, (self.xmax, self.ymax))
+        self.screen.blit(grave, (0, 0))
+
+        y = self.ygap * 3
+        text = ["Initial Specimen Number: ", "Show Icons: ", "Show Values: ", "Food Activated: ", "Food Growth Gap: ", "Show Terrain: "]
+        value = [str(self.init_bacteria_number), str(self.show_icons), str(self.show_values), str(self.food_activated), str(self.food_growth_gap), str(self.show_terrain)]
+        for i in range (0, len(text)):
+            tx, ty = disputil.DrawText(self.screen, text[i] + value[i], self.presskey_fontObj, pygame.Color("white"),
+                                      blit=True, x=self.xmax/2, y=y)
+            y = y + ty
+
+        for i in range(0, len(self.chosen_fauna)):
+            specimen = self.fauna[self.chosen_fauna[i]]["Name"] + ":  " + str(int((self.init_bacteria_number / len(self.chosen_fauna)) / self.init_bacteria_number * 100)) + " % " + "| Category:" + str(self.fauna[self.chosen_fauna[i]]["Category"]) + " | Reproduction:" + str(self.fauna[self.chosen_fauna[i]]["Reproduction"]) + " | Starvation Limit:" + str(self.fauna[self.chosen_fauna[i]]["Starvation Limit"]) + " | Gestation Gap:" + str(self.fauna[self.chosen_fauna[i]]["Gestation Gap"])
+            tx, ty = disputil.DrawText(self.screen, specimen, self.info_fontObj, pygame.Color("white"),
+                                       blit=True, x=self.xmax/2, y=y)
+            y = y + ty
+
+        ttx, tty = disputil.DrawText(self.screen, "YOUR COLONY DIED!!!", self.title_fontObj, pygame.Color("white"),
+                          blit=False)
+        disputil.DrawText(self.screen, "YOUR COLONY DIED!!!", self.title_fontObj, pygame.Color("white"),
+                          blit=True, x=self.xmax/2 - ttx/2, y=self.ymax/2)
+
+        tx, ty = disputil.DrawText(self.screen, "AT AGE: "+str(self.colony_age), self.welcome_fontObj, pygame.Color("white"),
+                          blit=False)
+        disputil.DrawText(self.screen, "AT AGE: "+str(self.colony_age), self.welcome_fontObj, pygame.Color("white"),
+                          blit=True, x=self.xmax/2 - tx/2, y=self.ymax/2 + tty)
+
+        tx, ty = disputil.DrawText(self.screen, settings.presskey, self.presskey_fontObj, pygame.Color("white"),
+                          blit=False)
+        disputil.DrawText(self.screen, settings.presskey, self.presskey_fontObj, pygame.Color("white"),
+                          blit=True, x=self.xmax/2 - tx/2, y=self.ymax - self.ymargin - ty * 0.8)
+
+        pygame.display.update()
+
+        event = disputil.event_loop()
+        while event.get("Type") not in (pygame.MOUSEBUTTONDOWN, pygame.KEYDOWN):
+            event = disputil.event_loop()
+            time.sleep(0.01)
 
         return
 
@@ -787,15 +899,23 @@ class Colony:
 ####################################################################
 myColony = Colony()
 
-if settings.show_intro: myColony.intro()
-myColony.create_terrain()
-colony = myColony.create()
-
 while True:
 
-    myColony.grow_terrain()
-    colony = myColony.evolve(colony)
+    if settings.show_intro:
+        while True:
+            myColony.intro()
+            if myColony.choose_fauna(): break
 
-    if not colony: break
-    colony = myColony.catch_action(disputil.event_loop(), colony)
-    time.sleep(0.2)
+    myColony.create_terrain()
+    colony = myColony.create()
+
+    while True:
+
+        myColony.grow_terrain()
+        colony = myColony.evolve(colony)
+
+        if not colony:
+            myColony.death()
+            break
+        colony = myColony.catch_action(disputil.event_loop(), colony)
+        time.sleep(0.2)

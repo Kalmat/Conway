@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 # -*- coding: utf-8 -*-
 
 import pygame
@@ -22,8 +22,6 @@ reproduction = ["sex", "mitosis", "hermaphrodite"]
 foods = ["organic", "inorganic", "preys", "all"]
 
 terrains = ["ground", "organic", "inorganic"]
-
-colony_diversity = [0, 0, 0, 0, 0, 0, 0, 0, 0, 3]   # Use this to add more than one of a kind (and don't run intro())
 
 fauna = [
     {"Name": "Green Bacteria",
@@ -210,6 +208,10 @@ frame_check_scale = int(display_size[0]*frame_check_size/1280)
 cataclism_icon = "Lightning"
 cataclism_icon_size = 256
 cataclism_icon_scale = int(display_size[0]*cataclism_icon_size/1280)
+quit_icon = "Quit"
+quit_icon_size = 50
+quit_icon_scale = int(display_size[0]*quit_icon_size/1280)
+grave_img = "Grave"
 
 # COLORS
 cBkg = pygame.Color('black')
@@ -235,10 +237,14 @@ options = "OPTIONS"
 options_title_color = pygame.Color("orange")
 options_color = pygame.Color("white")
 food_growth_tip = "150 if no predator and mitosis / 25-50 if no predator and sex / 50 if predator present"
-category_tip = "prey / predator / both"
+category_tip = "prey / predator / hermaphrodite"
 food_tip = "organic / inorganic / preys / all"
 reproduction_tip = "mitosis / sex"
-starvation_tip = "20+ if only predators and mitosis / 6 if only preys and sex"
+starvation_tip = "20+ if only predators and mitosis / 6 if only preys and sex / 5-10 if both"
+speed_tip = "(min) 1 to 20 (max)  / 10 for everyone if Food Mode not Activated"
+hunt_tip = "1 / N probability to FAIL hunting a prey (0 - NO fail, 1 - ALWAYS fail, 2 - 50% ...)"
+colony_diversity_tip = "Set specimens separated by comma (will override Fauna Selection Screen)"
+colony_diversity = "e.g.: 0,0,0,3"   # Use this to add more than one of a kind
 options_button = "Apply"
 button_text_color = pygame.Color("white")
 back = "Back"
@@ -258,22 +264,22 @@ intro_icon_gap = [(80, 180), (170, 75), (120, 80), (220, 200)]
 intro_icon_pos = [(0, 1), (1, 0), (0, 0), (1, 1)]
 
 """ OTHER COMBINATIONS:
-Previous values work fine and produce stable colonies for:
+Previous values work fine and produce (with little adjustments) stable colonies for:
 
 ### ALL
 Food Growth: 50
 All Preys - Mitosis / Starvation 5
 Predator - Mitosis / Starvation 10
 
-# JUST PREYS - MITOSIS
+### JUST PREYS - MITOSIS
 Food Growth: 150
 All Preys - Mitosis / Starvation 5
 
-# JUST PREYS - SEX
+### JUST PREYS - SEX
 Food Growth: 50
-One Prey - Sex / Starvation 6
+One Prey - Sex / Starvation 6-7
 
-# JUST PREDATORS - MITOSIS
+### JUST PREDATORS - MITOSIS
 Predator - Mitosis / Starvation 20
 
 ### STRANGE
@@ -283,14 +289,19 @@ Predator: Mitosis / Starvation 20 / Size 20
 
 ### CATCH ME (IF YOU CAN!!!!)
 Init Specimen Number = 2
-One Prey: sex / Speed 50 / Size 20 / Starvation 10000000
-Predator: sex / Speed 50 / Size 21 (no overgrowth) / Starvation 10000000
+One Prey: sex / Speed 10 / Size 20 / Starvation 10000000
+Predator: sex / Speed 5 / Size 21 (no overgrowth) / Starvation 10000000
 
 ### OVERWHELMED (BRING SOME BICARB!!!!)
 Food Activated = False
-Show Intro: False
-colony_diversity = [0, 0, 0, 0, 0, 0, 0, 0, 0, 3]
-One Prey
-Predator: Category: Predator / Reproduction None / Speed 20 / Size 21
+Colony Fauna = 0,0,0,0,0,0,0,0,0,3
+One Prey: Reproduction None / Speed 5 / Size 20
+Predator: Category: Predator / Reproduction None / Speed 10 / Size 21 (no overgrowth)
+
+## HUNGER NOT
+Food Activated = True
+Colony Fauna = 0,3,3,3,3,3,3,3,3,3
+One Prey: Longevity 100
+Predator Category predator / Reproduction none / Hunt Success 0
 
 """
