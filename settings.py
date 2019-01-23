@@ -21,20 +21,26 @@ sociability = ["lone", "family", "town", "city"]
 reproduction = ["sex", "mitosis", "hermaphrodite"]
 foods = ["organic", "inorganic", "preys", "all"]
 
-terrains = ["ground", "organic", "inorganic"]
+terrains = ["g", "o", "i"]        # (saving memory) g - ground / o - organic / i - inorganic
+terrain_composition = ["o"]
+terrain_evolution = [("o", "i"), ("i", "o"), ("g", "g")]
 
 fauna = [
     {"Name": "Green Bacteria",
      "Category": "prey",
      "Gender": "both",
-     "Reproduction": "mitosis",
+     "Reproduction": "hermaphrodite",
      "Food": "organic",
      "Last Dinner": 0,
-     "Starvation Limit": 5,   # More starvation limit if sex and predator (e.g. 20)
+     "Starvation Limit": 5,
+     "Starvation Init Ratio": 0.0,
+     "Starvation Init Point": 0,
+     "Starvation Size Ratio": 0.2,
+     "Starvation Size Limit": 4,
      "Hunt Randomize": False,
      "Hunt Success": 3,
      "Birth Size": 1,
-     "Maturity Size": 20,   # More size than predator if sex
+     "Maturity Size": 20,
      "Growth Gap": 10,
      "Overgrowth": False,
      "Max Size": 20,
@@ -45,11 +51,15 @@ fauna = [
      "Longevity": 1000,
      "Metabolism": "medium",
      "Sociability": "lone",
+     "Maturity Init Ratio": 0.2,
+     "Maturity End Ratio": 0.8,
      "Maturity Init Point": 200,
      "Maturity End Point": 800,
      "Gestation Time": 1,
      "Gestation Gap": 10,
      "Last Gestation": 0,
+     "Gestation Size Ratio": 0.8,
+     "Gestation Size Limit": 16,
      "Gestation Food Level": 3,
      "Color": pygame.Color("chartreuse4"),
      "Position": (0,0),
@@ -66,14 +76,18 @@ fauna = [
     {"Name": "Cyan Stick Bacteria",
      "Category": "prey",
      "Gender": "both",
-     "Reproduction": "mitosis",
+     "Reproduction": "hermaphrodite",
      "Food": "organic",
      "Last Dinner": 0,
-     "Starvation Limit": 5,   # More starvation limit if sex and predator (e.g. 20)
+     "Starvation Limit": 5,
+     "Starvation Init Ratio": 0.0,
+     "Starvation Init Point": 0,
+     "Starvation Size Ratio": 0.2,
+     "Starvation Size Limit": 4,
      "Hunt Randomize": False,
      "Hunt Success": 3,
      "Birth Size": 1,
-     "Maturity Size": 20,   # More size than predator if sex
+     "Maturity Size": 20,
      "Growth Gap": 10,
      "Overgrowth": False,
      "Max Size": 20,
@@ -84,11 +98,15 @@ fauna = [
      "Longevity": 1000,
      "Metabolism": "medium",
      "Sociability": "lone",
+     "Maturity Init Ratio": 0.2,
+     "Maturity End Ratio": 0.8,
      "Maturity Init Point": 200,
      "Maturity End Point": 800,
      "Gestation Time": 1,
      "Gestation Gap": 10,
      "Last Gestation": 0,
+     "Gestation Size Ratio": 0.8,
+     "Gestation Size Limit": 16,
      "Gestation Food Level": 3,
      "Color": pygame.Color("cyan4"),
      "Position": (0,0),
@@ -105,14 +123,18 @@ fauna = [
     {"Name": "Green Pseudopodical Virus",
      "Category": "prey",
      "Gender": "both",
-     "Reproduction": "mitosis",
+     "Reproduction": "hermaphrodite",
      "Food": "organic",
      "Last Dinner": 0,
-     "Starvation Limit": 5,   # More starvation limit if sex and predator (e.g. 20)
+     "Starvation Limit": 5,
+     "Starvation Init Ratio": 0.0,
+     "Starvation Init Point": 0,
+     "Starvation Size Ratio": 0.2,
+     "Starvation Size Limit": 4,
      "Hunt Randomize": False,
      "Hunt Success": 3,
      "Birth Size": 1,
-     "Maturity Size": 20,   # More size than predator if sex
+     "Maturity Size": 20,
      "Growth Gap": 10,
      "Overgrowth": False,
      "Max Size": 20,
@@ -123,11 +145,15 @@ fauna = [
      "Longevity": 1000,
      "Metabolism": "medium",
      "Sociability": "lone",
+     "Maturity Init Ratio": 0.2,
+     "Maturity End Ratio": 0.8,
      "Maturity Init Point": 200,
      "Maturity End Point": 800,
      "Gestation Time": 1,
      "Gestation Gap": 10,
      "Last Gestation": 0,
+     "Gestation Size Ratio": 0.8,
+     "Gestation Size Limit": 16,
      "Gestation Food Level": 3,
      "Color": pygame.Color("orange"),
      "Position": (0,0),
@@ -139,15 +165,19 @@ fauna = [
      "Icon File": "Virus3",
      "Rotate": True,
      "Icon Index": 3
-    },
+     },
 
     {"Name": "Purple Virus",
      "Category": "both",
      "Gender": "both",
-     "Reproduction": "mitosis",
+     "Reproduction": "hermaphrodite",
      "Food": "prey",
      "Last Dinner": 0,
      "Starvation Limit": 10,
+     "Starvation Init Ratio": 0.2,
+     "Starvation Init Point": 200,
+     "Starvation Size Ratio": 0.5,
+     "Starvation Size Limit": 10,
      "Hunt Randomize": True,
      "Hunt Success": 3,
      "Birth Size": 1,
@@ -161,11 +191,15 @@ fauna = [
      "Longevity": 1000,
      "Metabolism": "medium",
      "Sociability": "lone",
+     "Maturity Init Ratio": 0.2,
+     "Maturity End Ratio": 0.8,
      "Maturity Init Point": 200,
      "Maturity End Point": 800,
      "Gestation Time": 1,
      "Gestation Gap": 10,
      "Last Gestation": 0,
+     "Gestation Size Ratio": 0.8,
+     "Gestation Size Limit": 16,
      "Gestation Food Level": 3,
      "Color": pygame.Color("purple"),
      "Position": (0,0),
@@ -214,6 +248,8 @@ quit_icon_scale = int(display_size[0]*quit_icon_size/1280)
 grave_img = "Grave"
 
 # COLORS
+# https://mike632t.wordpress.com/2018/02/10/displaying-a-list-of-the-named-colours-available-in-pygame/
+# https://htmlcolorcodes.com/color-names/
 cBkg = pygame.Color('black')
 cBkg_highlighted = pygame.Color("cadetblue4")
 cTerrain = pygame.Color("darkslategrey")
@@ -236,15 +272,16 @@ presskey_color = pygame.Color("white")
 options = "OPTIONS"
 options_title_color = pygame.Color("orange")
 options_color = pygame.Color("white")
-food_growth_tip = "150 if no predator and mitosis / 25-50 if no predator and sex / 50 if predator present"
-category_tip = "prey / predator / hermaphrodite"
+food_growth_tip = "150 if no predator and hermaphrodite / 25-50 if no predator and sex / 50 if predator present"
+category_tip = "prey / predator / both"
 food_tip = "organic / inorganic / preys / all"
-reproduction_tip = "mitosis / sex"
-starvation_tip = "20+ if only predators and mitosis / 6 if only preys and sex / 5-10 if both"
+reproduction_tip = "hermaphrodite / hermaphrodite / sex"
+starvation_tip = "20+ if only predators and hermaphrodite / 6 if only preys and sex / 5-10 if both"
 speed_tip = "(min) 1 to 20 (max)  / 10 for everyone if Food Mode not Activated"
 hunt_tip = "1 / N probability to FAIL hunting a prey (0 - NO fail, 1 - ALWAYS fail, 2 - 50% ...)"
 colony_diversity_tip = "Set specimens separated by comma (will override Fauna Selection Screen)"
-colony_diversity = "e.g.: 0,0,0,3"   # Use this to add more than one of a kind
+colony_diversity = "e.g.: 0,0,0,3"
+terrain_composition_tip = "e.g. organic,organic,inorganic,ground"
 options_button = "Apply"
 button_text_color = pygame.Color("white")
 back = "Back"
@@ -257,35 +294,32 @@ info_font = "Waree/Waree.ttf"
 info_font_size = int(display_size[0]*10/1280)
 info_font_color = pygame.Color("white")
 values_font = "freesans/freesans.ttf"
-values_font_size = int(display_size[0]*10/1280)
+values_font_size = int(display_size[0]*12/1280)
 
 # POSITIONS
 intro_icon_gap = [(80, 180), (170, 75), (120, 80), (220, 200)]
 intro_icon_pos = [(0, 1), (1, 0), (0, 0), (1, 1)]
 
-""" OTHER COMBINATIONS:
+
+""" HERMAPHRODITE SCENARIOS:
 Previous values work fine and produce (with little adjustments) stable colonies for:
 
 ### ALL
 Food Growth: 50
-All Preys - Mitosis / Starvation 5
-Predator - Mitosis / Starvation 10
+All Preys - hermaphrodite / Starvation 5
+Predator - hermaphrodite / Starvation 10
 
-### JUST PREYS - MITOSIS
+### JUST PREYS
 Food Growth: 150
-All Preys - Mitosis / Starvation 5
+All Preys - hermaphrodite / Starvation 5
 
-### JUST PREYS - SEX
-Food Growth: 50
-One Prey - Sex / Starvation 6-7
-
-### JUST PREDATORS - MITOSIS
-Predator - Mitosis / Starvation 20
+### JUST PREDATORS
+Predator - hermaphrodite / Starvation 20
 
 ### STRANGE
 Food Growth: 75
 One Prey: Sex / Starvation 20 / Size 21
-Predator: Mitosis / Starvation 20 / Size 20
+Predator: hermaphrodite / Starvation 20 / Size 20
 
 ### CATCH ME (IF YOU CAN!!!!)
 Init Specimen Number = 2
@@ -295,7 +329,7 @@ Predator: sex / Speed 5 / Size 21 (no overgrowth) / Starvation 10000000
 ### OVERWHELMED (BRING SOME BICARB!!!!)
 Food Activated = False
 Colony Fauna = 0,0,0,0,0,0,0,0,0,3
-One Prey: Reproduction None / Speed 5 / Size 20
+One Prey: Reproduction hermaphrodite / Gestation Gap 100 / Speed 5 / Size 20
 Predator: Category: Predator / Reproduction None / Speed 10 / Size 21 (no overgrowth)
 
 ## HUNGER NOT
@@ -303,5 +337,22 @@ Food Activated = True
 Colony Fauna = 0,3,3,3,3,3,3,3,3,3
 One Prey: Longevity 100
 Predator Category predator / Reproduction none / Hunt Success 0
+
+"""
+
+""" MITOSIS SCENARIOS:
+
+### ALL
+Food Growth: 50
+All Preys - mitosis / Starvation 5
+Predator - mitosis / Starvation 30
+
+"""
+
+""" SEX SCENARIOS:
+
+### JUST PREYS
+Food Growth: 50
+One Prey - Sex / Starvation 6-7
 
 """
