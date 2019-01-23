@@ -8,6 +8,9 @@ import io
 import requests
 import pygame
 import time
+import random
+import numpy as np
+from noise import pnoise2
 import traceback
 
 
@@ -591,3 +594,36 @@ while not done
             
     time.sleep(0.05)
 """
+
+
+####################################################################
+def generate_noise_map(width, height):
+
+    scale = 100.0
+    octaves = 6
+    persistence = 0.5
+    lacunarity = 2.0
+    base = random.randint(1, 5)
+
+    world1 = np.zeros((width, height))
+    world = [["" for y in range(height)] for x in range(width)]
+
+    for i in range(width):
+        for j in range(height):
+            world1[i][j] = pnoise2(
+                i/scale,
+                j/scale,
+                octaves=octaves,
+                persistence=persistence,
+                lacunarity=lacunarity,
+                repeatx=1024,
+                repeaty=1024,
+                base=base)
+
+            #if -1 < world1[i][j] < 0:    # 50%
+            if 0.1 < world1[i][j] < 0.3:
+                world[i][j] = "i"
+            else:
+                world[i][j] = "o"
+
+    return world

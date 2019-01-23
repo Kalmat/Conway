@@ -13,6 +13,7 @@ food_growth_gap = 50
 logging = True
 logging_verbose = False
 show_intro = True
+procedural_terrain = True
 
 categories = ["prey", "predator", "both"]
 genders = ["male", "female"]
@@ -29,7 +30,7 @@ fauna = [
     {"Name": "Green Bacteria",
      "Category": "prey",
      "Gender": "both",
-     "Reproduction": "hermaphrodite",
+     "Reproduction": "mitosis",
      "Food": "organic",
      "Last Dinner": 0,
      "Starvation Limit": 5,
@@ -76,7 +77,7 @@ fauna = [
     {"Name": "Cyan Stick Bacteria",
      "Category": "prey",
      "Gender": "both",
-     "Reproduction": "hermaphrodite",
+     "Reproduction": "mitosis",
      "Food": "organic",
      "Last Dinner": 0,
      "Starvation Limit": 5,
@@ -123,7 +124,7 @@ fauna = [
     {"Name": "Green Pseudopodical Virus",
      "Category": "prey",
      "Gender": "both",
-     "Reproduction": "hermaphrodite",
+     "Reproduction": "mitosis",
      "Food": "organic",
      "Last Dinner": 0,
      "Starvation Limit": 5,
@@ -301,13 +302,22 @@ intro_icon_gap = [(80, 180), (170, 75), (120, 80), (220, 200)]
 intro_icon_pos = [(0, 1), (1, 0), (0, 0), (1, 1)]
 
 
+""" MITOSIS SCENARIOS:
+
+### ALL    ************** TESTED OK!
+Food Growth: 50
+All Preys - mitosis / Starvation 5
+Predator - hermaphrodite / Starvation 10
+
+"""
+
 """ HERMAPHRODITE SCENARIOS:
 Previous values work fine and produce (with little adjustments) stable colonies for:
 
 ### ALL
 Food Growth: 50
 All Preys - hermaphrodite / Starvation 5
-Predator - hermaphrodite / Starvation 10
+Predator - hermaphrodite / Starvation 7
 
 ### JUST PREYS
 Food Growth: 150
@@ -337,15 +347,6 @@ Food Activated = True
 Colony Fauna = 0,3,3,3,3,3,3,3,3,3
 One Prey: Longevity 100
 Predator Category predator / Reproduction none / Hunt Success 0
-
-"""
-
-""" MITOSIS SCENARIOS:
-
-### ALL
-Food Growth: 50
-All Preys - mitosis / Starvation 5
-Predator - mitosis / Starvation 30
 
 """
 

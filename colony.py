@@ -4,7 +4,6 @@
 import pygame
 import time
 import random
-import noise
 import copy
 import importlib
 import settings
@@ -466,7 +465,12 @@ class Colony:
     def create_terrain(self):
 
         if self.food_activated:
-            self.terrain_original = [[random.choice(self.terrain_composition) for y in range(self.ymax)] for x in range(self.xmax)]
+
+            if settings.procedural_terrain:
+                self.terrain_original = disputil.generate_noise_map(self.xmax, self.ymax)
+            else:
+                self.terrain_original = [[random.choice(self.terrain_composition) for y in range(self.ymax)] for x in range(self.xmax)]
+
             self.terrain_type = copy.deepcopy(self.terrain_original)
             self.terrain_age = [[0 for y in range(self.ymax)] for x in range(self.xmax)]
 
@@ -526,7 +530,8 @@ class Colony:
             bacteria["Gender"] = random.choice(settings.genders)
         else:
             bacteria["Gender"] = "none"
-        bacteria["Position"] = random.randint(self.xmin, self.xmax), random.randint(self.ymin, self.ymax)
+        if bacteria["Position"] == (0,0):
+            bacteria["Position"] = random.randint(self.xmin, self.xmax), random.randint(self.ymin, self.ymax)
         bacteria["Size"] = bacteria_settings["Birth Size"]
         bacteria["Speed"] = min(20, bacteria_settings["Speed"])
         bacteria["Last Move"] = 0
@@ -698,6 +703,7 @@ class Colony:
             if bacteria1["Maturity Init Point"] <= bacteria1["Age"] <= bacteria1["Maturity End Point"] and \
                     bacteria1["Last Gestation"] >= bacteria1["Gestation Gap"] and \
                     bacteria1["Size"] >= bacteria1["Gestation Size Limit"]:
+                bacteria1["Position"] = (0,0)
                 son = self.birth(bacteria1, bacteria1["Icon Index"])
                 last = bacteria1["Last Gestation"]
                 bacteria1["Last Gestation"] = 0
@@ -717,6 +723,7 @@ class Colony:
                     ((bacteria1["Gender"] == "male" and bacteria2["Gender"] == "female") or \
                      (bacteria1["Gender"] == "female" and bacteria2["Gender"] == "male") or \
                      bacteria1["Gender"] == "both" or bacteria2["Gender"] == "both"):
+                bacteria1["Position"] = (0,0)
                 son = self.birth(bacteria1, bacteria1["Icon Index"])
                 last1 = bacteria1["Last Gestation"]
                 last2 = bacteria2["Last Gestation"]
@@ -927,7 +934,7 @@ class Colony:
                         colony[i]["Status"] = "dead"
                         casualties += 1
                 time.sleep(1)
-                print("FATAL CATASTROPHY!!!! caused %s casualties. To be or not to be..." % casualties)
+                print("FATAL CATASTROPHE!!!! caused %s casualties. To be or not to be..." % casualties)
 
             if event["Key"] == pygame.K_d:
                 for i in range(0, len(colony)):
