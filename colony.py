@@ -311,7 +311,10 @@ class Colony:
         self.food_growth_gap = int(value[4])
         self.show_terrain = value[5]
         self.procedural_terrain = value[6]
-        if not self.procedural_terrain:
+        if self.procedural_terrain:
+            self.terrain_composition = settings.terrain_composition
+            self.terrain_evolution = settings.terrain_evolution
+        else:
             self.terrain_composition = settings.terrain_composition_normal
             self.terrain_evolution = settings.terrain_evolution_normal
         self.logging = value[7]
