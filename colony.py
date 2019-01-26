@@ -45,10 +45,14 @@ class Colony:
         self.food_growth_gap = settings.food_growth_gap
         self.show_terrain = settings.show_terrain
         self.procedural_terrain = settings.procedural_terrain
+        if self.procedural_terrain:
+            self.terrain_composition = settings.terrain_composition
+            self.terrain_evolution = settings.terrain_evolution
+        else:
+            self.terrain_composition = settings.terrain_composition_normal
+            self.terrain_evolution = settings.terrain_evolution_normal
         self.logging = settings.logging
         self.logging_verbose = settings.logging_verbose
-        self.terrain_composition = settings.terrain_composition
-        self.terrain_evolution = settings.terrain_evolution
         self.terrain_prob = settings.terrain_prob
 
         self.first_run = True
@@ -481,6 +485,7 @@ class Colony:
                 self.terrain_type = self.generate_noise_map(self.xmax, self.ymax, self.terrain_composition, self.terrain_prob)
             else:
                 self.terrain_type = [[self.terrain_composition[0] for y in range(self.ymax)] for x in range(self.xmax)]
+            print(self.terrain_type)
             self.terrain_type_original = copy.deepcopy(self.terrain_type)
             self.terrain_age = [[0 for y in range(self.ymax)] for x in range(self.xmax)]
 
@@ -583,7 +588,7 @@ class Colony:
             bacteria["Gender"] = random.choice(settings.genders)
         else:
             bacteria["Gender"] = "none"
-        if bacteria["Position"] == (0,0):
+        if bacteria["Position"] == (0,0) or bacteria["Reproduction"] != "mitosis":
             bacteria["Position"] = random.randint(self.xmin, self.xmax), random.randint(self.ymin, self.ymax)
         bacteria["Size"] = bacteria_settings["Birth Size"]
         bacteria["Speed"] = min(20, bacteria_settings["Speed"])
@@ -767,10 +772,7 @@ class Colony:
             if bacteria1["Maturity Init Point"] <= bacteria1["Age"] <= bacteria1["Maturity End Point"] and \
                     bacteria1["Last Gestation"] >= bacteria1["Gestation Gap"] and \
                     bacteria1["Size"] >= bacteria1["Gestation Size Limit"]:
-                pos = bacteria1["Position"]
-                bacteria1["Position"] = (0, 0)
                 son = self.birth(bacteria1, bacteria1["Icon Index"])
-                bacteria1["Position"] = pos
                 last = bacteria1["Last Gestation"]
                 bacteria1["Last Gestation"] = 0
                 if self.logging_verbose:
@@ -790,7 +792,6 @@ class Colony:
                     ((bacteria1["Gender"] == "male" and bacteria2["Gender"] == "female") or \
                      (bacteria1["Gender"] == "female" and bacteria2["Gender"] == "male") or \
                      bacteria1["Gender"] == "both" or bacteria2["Gender"] == "both"):
-                bacteria1["Position"] = (0,0)
                 son = self.birth(bacteria1, bacteria1["Icon Index"])
                 last1 = bacteria1["Last Gestation"]
                 last2 = bacteria2["Last Gestation"]
@@ -996,6 +997,12 @@ class Colony:
 
             if event["Key"] == pygame.K_t:
                 self.show_terrain = not self.show_terrain
+
+            if event["Key"] == pygame.K_l:
+                self.logging = not self.logging
+
+            if event["Key"] == pygame.K_v:
+                self.logging_verbose = not self.logging_verbose
 
             if event["Key"] in (pygame.K_c, pygame.K_g):
                 if event["Key"] == pygame.K_c:
