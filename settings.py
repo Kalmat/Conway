@@ -13,7 +13,7 @@ food_growth_gap = 50
 logging = True
 logging_verbose = False
 show_intro = True
-procedural_terrain = True
+procedural_terrain = False
 
 categories = ["prey", "predator", "both"]
 genders = ["male", "female"]
@@ -21,8 +21,8 @@ metabolism = ["low", "medium", "fast"]
 sociability = ["lone", "family", "town", "city"]
 reproduction = ["sex", "mitosis", "hermaphrodite"]
 foods = ["organic", "inorganic", "preys", "all"]
-
 terrains = ["g", "o", "i"]        # (saving memory) g - ground / o - organic / i - inorganic
+directions = [(-1, 0), (-1, 1), (0, 1), (1, 1), (1, 0), (1, -1), (0, -1), (-1, -1)]
 
 fauna = [
     {"Name": "Green Bacteria",
@@ -175,8 +175,8 @@ fauna = [
      "Starvation Limit": 10,
      "Starvation Init Ratio": 0.2,
      "Starvation Init Point": 200,
-     "Starvation Size Ratio": 0.5,
-     "Starvation Size Limit": 10,
+     "Starvation Size Ratio": 0.4,
+     "Starvation Size Limit": 8,
      "Hunt Randomize": True,
      "Hunt Success": 3,
      "Birth Size": 1,
@@ -213,7 +213,12 @@ fauna = [
      }
 ]
 
-directions = [(-1, 0), (-1, 1), (0, 1), (1, 1), (1, 0), (1, -1), (0, -1), (-1, -1)]
+# TERRAIN
+terrain_composition = ["i", "o", "g"]
+terrain_prob = [46, 8, 46]
+terrain_evolution = [("i", "o"), ("o", "g"), ("g", "i")]
+terrain_composition_normal = ["o"]
+terrain_evolution_normal = [("o", "g")]
 
 # ICONS
 icons_folder = "icons/"
@@ -280,7 +285,7 @@ speed_tip = "(min) 1 to 20 (max)  / 10 for everyone if Food Mode not Activated"
 hunt_tip = "1 / N probability to FAIL hunting a prey (0 - NO fail, 1 - ALWAYS fail, 2 - 50% ...)"
 colony_diversity_tip = "Set specimens separated by comma (will override Fauna Selection Screen)"
 colony_diversity = "e.g.: 0,0,0,3"
-terrain_composition_tip = "e.g. organic,organic,inorganic,ground"
+terrain_composition_tip = "e.g. i,o,g,o,i,o,g"
 options_button = "Apply"
 button_text_color = pygame.Color("white")
 back = "Back"
@@ -298,13 +303,6 @@ values_font_size = int(display_size[0]*12/1280)
 # POSITIONS
 intro_icon_gap = [(80, 180), (170, 75), (120, 80), (220, 200)]
 intro_icon_pos = [(0, 1), (1, 0), (0, 0), (1, 1)]
-
-# PROCEDURAL TERRAIN
-terrain_composition = ["i", "o", "g"]
-terrain_prob = [46, 8, 46]
-terrain_evolution = [("i", "o"), ("o", "g"), ("g", "i")]
-terrain_composition_normal = ["o"]
-terrain_evolution_normal = [("o", "g")]
 
 """ MITOSIS SCENARIOS:
 

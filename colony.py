@@ -5,6 +5,7 @@ import pygame
 import time
 import random
 import numpy
+import math
 import noise
 import copy
 import importlib
@@ -542,6 +543,7 @@ class Colony:
                             if self.terrain_type_original[i][j] == self.terrain_evolution[k][0] and \
                                     self.terrain_type[i][j] == self.terrain_evolution[k][1]:
                                 self.terrain_type[i][j] = self.terrain_type_original[i][j]
+                                break
 
                     if self.show_terrain and self.terrain_type[i][j] == "g":
                         self.screen.set_at((i, j), settings.cBkg)
@@ -565,7 +567,7 @@ class Colony:
                 colony.append(myColony.birth(self.fauna[self.chosen_fauna[i]], i))
             self.icon.append(disputil.loadIcon(self.fauna[self.chosen_fauna[i]]["Icon File"], settings.icons_folder))
 
-            print(self.fauna[self.chosen_fauna[i]]["Name"], int((self.init_bacteria_number / len(self.chosen_fauna)) / self.init_bacteria_number * 100), "%", "| Category:", self.fauna[self.chosen_fauna[i]]["Category"], "| Reproduction:", self.fauna[self.chosen_fauna[i]]["Reproduction"], "| Starvation Limit:", self.fauna[self.chosen_fauna[i]]["Starvation Limit"], "| Gestation Gap:",self.fauna[self.chosen_fauna[i]]["Gestation Gap"])
+            print(self.fauna[self.chosen_fauna[i]]["Name"], int((self.init_bacteria_number / len(self.chosen_fauna)) / self.init_bacteria_number * 100), "%", "| Category:", self.fauna[self.chosen_fauna[i]]["Category"], "| Food:", self.fauna[self.chosen_fauna[i]]["Food"], "| Reproduction:", self.fauna[self.chosen_fauna[i]]["Reproduction"], "| Starvation Limit:", self.fauna[self.chosen_fauna[i]]["Starvation Limit"], "| Gestation Gap:",self.fauna[self.chosen_fauna[i]]["Gestation Gap"])
         print()
 
         random.shuffle(colony)
@@ -630,11 +632,10 @@ class Colony:
                 if colony[i]["Reproduction"] in ("mitosis", "hermaphrodite"):
                     son, colony[i], foo = self.check_reproduction(colony[i])
 
-                if colony[i]["Category"] == "prey":
+                if colony[i]["Category"] == "prey" or colony[i]["Food"] == "all":
                     eaten, colony[i], foo = self.check_feed(colony[i])
 
                 if colony[i]["Category"] in ("predator", "both") or \
-                        colony[i]["Food"] == "all" or \
                         colony[i]["Reproduction"] == "sex":
 
                     for j in range(0, len(colony)):
@@ -644,8 +645,7 @@ class Colony:
                                 if colony[i]["Reproduction"] == "sex":
                                     son, colony[i], colony[j] = self.check_reproduction(colony[i], colony[j])
 
-                                if son is None and colony[i]["Category"] in ("predator", "both") or \
-                                        colony[i]["Food"] == "all":
+                                if son is None and colony[i]["Category"] in ("predator", "both"):
                                     mark_eaten, colony[i], colony[j] = self.check_feed(colony[i], colony[j])
                                     if mark_eaten: eaten = True
 
@@ -715,7 +715,7 @@ class Colony:
         x = int((bacteria["Position"][0] + direction[0] * bacteria["Size"] * (bacteria["Speed"] / 10))) % settings.display_size[0]
         y = int((bacteria["Position"][1] + direction[1] * bacteria["Size"] * (bacteria["Speed"] / 10))) % settings.display_size[1]
 
-        if bacteria["Category"] == "prey" and bacteria["Food"][:1] != self.terrain_type[x][y]:
+        if bacteria["Category"] == "prey" and bacteria["Food"][:1] not in (self.terrain_type[x][y], "all"):
             directions = copy.deepcopy(settings.directions)
             random.shuffle(directions)
             for i in range(0, len(directions)):
@@ -762,12 +762,15 @@ class Colony:
                           last, "over", bacteria1["Gestation Gap"])
             else:
                 bacteria1["Last Gestation"] += 1
+
         elif bacteria1["Reproduction"] == "hermaphrodite":
             if bacteria1["Maturity Init Point"] <= bacteria1["Age"] <= bacteria1["Maturity End Point"] and \
                     bacteria1["Last Gestation"] >= bacteria1["Gestation Gap"] and \
                     bacteria1["Size"] >= bacteria1["Gestation Size Limit"]:
-                bacteria1["Position"] = (0,0)
+                pos = bacteria1["Position"]
+                bacteria1["Position"] = (0, 0)
                 son = self.birth(bacteria1, bacteria1["Icon Index"])
+                bacteria1["Position"] = pos
                 last = bacteria1["Last Gestation"]
                 bacteria1["Last Gestation"] = 0
                 if self.logging_verbose:
@@ -775,6 +778,7 @@ class Colony:
                           last, "over", bacteria1["Gestation Gap"])
             else:
                 bacteria1["Last Gestation"] += 1
+
         elif bacteria1["Reproduction"] == "sex" and bacteria2 is not None:
             if bacteria1["Name"] == bacteria2["Name"] and \
                     bacteria1["Maturity Init Point"] <= bacteria1["Age"] <= bacteria1["Maturity End Point"] and \
@@ -819,43 +823,51 @@ class Colony:
 
         eaten = False
 
-        if bacteria1["Category"] in ("predator", "both") or bacteria1["Food"] == "all":
-            if bacteria2 is not None:
-                if bacteria2["Status"] == "alive" and \
-                        bacteria2["Category"] != "predator" and \
-                        (bacteria1["Size"] > bacteria2["Size"] or
-                            (bacteria1["Size"] == bacteria2["Size"] and bacteria1["Age"] > bacteria2["Age"])) and \
-                        (((bacteria1["Hunt Randomize"] and random.randint(1, bacteria1["Hunt Success"])) != 1) or
-                        not bacteria1["Hunt Randomize"]):
-                    bacteria2["Status"] = "dead"
-                    size = bacteria1["Size"]
-                    if bacteria1["Overgrowth"]:
-                        bacteria1["Size"] = min(bacteria1["Size"] + bacteria2["Size"],
-                                                max(bacteria1["Max Size"], bacteria1["Maturity Size"]))
-                    else:
-                        bacteria1["Size"] = min(bacteria1["Size"] + bacteria2["Size"], bacteria1["Maturity Size"])
-                    if self.logging_verbose:
-                        print(bacteria1["Name"], "Age:", bacteria1["Age"], "Size:", size,
-                              "Hunt Randomize:", bacteria1["Hunt Randomize"], "Hunt Success:", bacteria1["Hunt Success"],
-                              "| ATE |",
-                              bacteria2["Name"], "Age:", bacteria2["Age"], "Size:", bacteria2["Size"])
-                    eaten = True
+        if bacteria1["Category"] in ("predator", "both") and bacteria2 is not None:
+            if bacteria2["Status"] == "alive" and \
+                    bacteria2["Category"] != "predator" and \
+                    (bacteria1["Size"] > bacteria2["Size"] or
+                        (bacteria1["Size"] == bacteria2["Size"] and bacteria1["Age"] > bacteria2["Age"])) and \
+                    (((bacteria1["Hunt Randomize"] and random.randint(1, bacteria1["Hunt Success"])) != 1) or
+                     not bacteria1["Hunt Randomize"]):
+                bacteria2["Status"] = "dead"
+                size = bacteria1["Size"]
+                if bacteria1["Overgrowth"]:
+                    bacteria1["Size"] = min(bacteria1["Size"] + bacteria2["Size"],
+                                            max(bacteria1["Max Size"], bacteria1["Maturity Size"]))
                 else:
-                    if self.logging_verbose:
-                        print(bacteria1["Name"], "Age:", bacteria1["Age"], "Size:", bacteria1["Size"],
-                              "Hunt Randomize:", bacteria1["Hunt Randomize"], "Hunt Success:", bacteria1["Hunt Success"],
-                              "| COULDN'T EAT |",
-                              bacteria2["Name"], "Age:", bacteria2["Age"], "Size:", bacteria2["Size"])
+                    bacteria1["Size"] = min(bacteria1["Size"] + bacteria2["Size"], bacteria1["Maturity Size"])
+                if self.logging_verbose:
+                    print(bacteria1["Name"], "Age:", bacteria1["Age"], "Size:", size,
+                          "Hunt Randomize:", bacteria1["Hunt Randomize"], "Hunt Success:", bacteria1["Hunt Success"],
+                          "| ATE |",
+                          bacteria2["Name"], "Age:", bacteria2["Age"], "Size:", bacteria2["Size"])
+                eaten = True
+            else:
+                if self.logging_verbose:
+                    print(bacteria1["Name"], "Age:", bacteria1["Age"], "Size:", bacteria1["Size"],
+                          "Hunt Randomize:", bacteria1["Hunt Randomize"], "Hunt Success:", bacteria1["Hunt Success"],
+                          "| COULDN'T EAT |",
+                          bacteria2["Name"], "Age:", bacteria2["Age"], "Size:", bacteria2["Size"])
 
-        if (bacteria1["Category"] == "prey" or bacteria1["Food"] == "all") and self.food_activated:
+        if (bacteria1["Category"] == "prey" or (bacteria1["Food"] == "all" and bacteria2 is None)) and self.food_activated:
             for i in range(0, int(bacteria1["Size"])):
+                #x = bacteria1["Position"][0] + int(bacteria1["Size"]/2) / 2 * math.sin(math.radians(angle))
+                #y = bacteria1["Position"][0] + int(bacteria1["Size"]/2) / 2 * (-1) * math.cos(math.radians(angle))
                 x = min(bacteria1["Position"][0] - int(bacteria1["Size"]/2) + i, self.xmax-1)
                 for j in range(0, int(bacteria1["Size"])):
                     y = min(bacteria1["Position"][1] - int(bacteria1["Size"]/2) + j, self.ymax-1)
                     if self.terrain_type[x][y] == bacteria1["Food"][:1] or bacteria1["Food"] == "all":
-                        for k in range(0, len(self.terrain_evolution)):
-                            if bacteria1["Food"][:1] == self.terrain_evolution[k][0] or bacteria1["Food"] == "all":
-                                self.terrain_type[x][y] = self.terrain_evolution[k][1]
+                        if bacteria1["Food"] == "all":
+                            for k in range(0, len(self.terrain_evolution)):
+                                if self.terrain_type[x][y] == self.terrain_evolution[k][0]:
+                                    self.terrain_type[x][y] = self.terrain_evolution[k][1]
+                                    break
+                        else:
+                            for k in range(0, len(self.terrain_evolution)):
+                                if bacteria1["Food"][:1] == self.terrain_evolution[k][0]:
+                                    self.terrain_type[x][y] = self.terrain_evolution[k][1]
+                                    break
                         self.terrain_age[x][y] = 0
                         eaten = True
 
@@ -982,6 +994,9 @@ class Colony:
         if event["Key"] is not None and event["Key"] != self.keyP:
             self.keyP = event["Key"]
 
+            if event["Key"] == pygame.K_t:
+                self.show_terrain = not self.show_terrain
+
             if event["Key"] in (pygame.K_c, pygame.K_g):
                 if event["Key"] == pygame.K_c:
                     icon = disputil.loadIcon("Lightning", settings.icons_folder)
@@ -990,7 +1005,7 @@ class Colony:
                 icon = pygame.transform.smoothscale(icon, (settings.cataclism_icon_scale, settings.cataclism_icon_scale))
                 x = random.randint(50, self.xmax - 50)
                 y = random.randint(50, self.ymax - 50)
-                self.screen.blit(icon, (x,y))
+                self.screen.blit(icon, (x, y))
                 pygame.display.update((x, y, settings.cataclism_icon_scale, settings.cataclism_icon_scale))
                 casualties = 0
                 for i in range(0, len(colony)):
