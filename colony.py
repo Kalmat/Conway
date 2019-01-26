@@ -4,6 +4,8 @@
 import pygame
 import time
 import random
+import numpy
+import noise
 import copy
 import importlib
 import settings
@@ -41,16 +43,19 @@ class Colony:
         self.food_activated = settings.food_activated
         self.food_growth_gap = settings.food_growth_gap
         self.show_terrain = settings.show_terrain
+        self.procedural_terrain = settings.procedural_terrain
         self.logging = settings.logging
         self.logging_verbose = settings.logging_verbose
         self.terrain_composition = settings.terrain_composition
+        self.terrain_evolution = settings.terrain_evolution
+        self.terrain_prob = settings.terrain_prob
 
         self.first_run = True
         self.chosen_fauna = []
         self.colony_diversity = None
         self.icon = []
         self.terrain_type = []
-        self.terrain_original = []
+        self.terrain_type_original = []
         self.terrain_age = []
         self.colony_age = 0
         self.average = 0
@@ -287,12 +292,12 @@ class Colony:
         disputil.DrawText(self.screen, settings.options, self.title_fontObj, settings.options_title_color, blit=True,
                           x=self.xmax / 2 - tx / 2, y=self.ygap)
 
-        text = ["Initial Specimen Number", "Show Icons", "Show Values", "Food Mode Activated", "Food Growth Ratio", "Show Terrain", "Logging", "Verbose", "Colony Fauna (Advanced)", "Terrain Composition (Advanced)"]
-        tip = [None, None, None, None, settings.food_growth_tip, None, None, None, settings.colony_diversity_tip, None]
-        value = [self.init_bacteria_number, self.show_icons, self.show_values, self.food_activated, self.food_growth_gap, self.show_terrain, self.logging, self.logging_verbose, settings.colony_diversity, settings.terrain_composition_tip]
+        text = ["Initial Specimen Number", "Show Icons", "Show Values", "Food Mode Activated", "Food Growth Ratio", "Show Terrain", "Procedural Map", "Logging", "Verbose", "Colony Fauna (Advanced)", "Terrain Composition (Advanced)"]
+        tip = [None, None, None, None, settings.food_growth_tip, None, None, None, None, settings.colony_diversity_tip, None]
+        value = [self.init_bacteria_number, self.show_icons, self.show_values, self.food_activated, self.food_growth_gap, self.show_terrain, self.procedural_terrain, self.logging, self.logging_verbose, settings.colony_diversity, settings.terrain_composition_tip]
         rect = (self.xgap * 10, ty + self.ygap*0.5, self.xmax*0.8, self.ymax*0.8)
 
-        value = self.get_options(text, tip, value, rect, self.ygap*0.65)
+        value = self.get_options(text, tip, value, rect, self.ygap*0.45)
 
         self.init_bacteria_number = int(value[0])
         self.show_icons = value[1]
@@ -300,14 +305,19 @@ class Colony:
         self.food_activated = value[3]
         self.food_growth_gap = int(value[4])
         self.show_terrain = value[5]
-        self.logging = value[6]
-        self.logging_verbose = value[7]
-        if value[8] != settings.colony_diversity:
-            self.colony_diversity = value[8].split(",")
+        self.procedural_terrain = value[6]
+        if not self.procedural_terrain:
+            self.terrain_composition = settings.terrain_composition_normal
+            self.terrain_evolution = settings.terrain_evolution_normal
+        self.logging = value[7]
+        self.logging_verbose = value[8]
+        if value[9] != settings.colony_diversity:
+            self.colony_diversity = value[9].split(",")
             for i in range(0, len(self.colony_diversity)):
                 self.colony_diversity[i] = int(self.colony_diversity[i])
-        if value[9] != settings.terrain_composition_tip:
-            self.terrain_composition = value[9].split(",")
+        if value[10] != settings.terrain_composition_tip:
+            self.terrain_composition = value[10].split(",")
+            self.terrain_prob = None
 
         return
 
@@ -466,36 +476,77 @@ class Colony:
 
         if self.food_activated:
 
-            if settings.procedural_terrain:
-                self.terrain_original = disputil.generate_noise_map(self.xmax, self.ymax)
+            if self.procedural_terrain:
+                self.terrain_type = self.generate_noise_map(self.xmax, self.ymax, self.terrain_composition, self.terrain_prob)
             else:
-                self.terrain_original = [[random.choice(self.terrain_composition) for y in range(self.ymax)] for x in range(self.xmax)]
-
-            self.terrain_type = copy.deepcopy(self.terrain_original)
+                self.terrain_type = [[self.terrain_composition[0] for y in range(self.ymax)] for x in range(self.xmax)]
+            self.terrain_type_original = copy.deepcopy(self.terrain_type)
             self.terrain_age = [[0 for y in range(self.ymax)] for x in range(self.xmax)]
 
         return
 
     ####################################################################
+    def generate_noise_map(self, width, height, composition, prob=None):
+
+        scale = 100.0
+        octaves = 6
+        persistence = 0.5
+        lacunarity = 2.0
+        base = random.randint(1, 5)
+
+        world1 = numpy.zeros((width, height))
+        world = [["" for y in range(height)] for x in range(width)]
+
+        bound = [-1.0]
+        if prob is None:
+            for i in range(1, len(composition)):
+                bound.append(bound[i - 1] + 2 / len(composition))
+        else:
+            for i in range(1, len(composition)):
+                bound.append(bound[i - 1] + (2 * prob[i - 1] / 100))
+        bound.append(1.0)
+
+        for i in range(width):
+            for j in range(height):
+                world1[i][j] = noise.pnoise2(
+                    i / scale,
+                    j / scale,
+                    octaves=octaves,
+                    persistence=persistence,
+                    lacunarity=lacunarity,
+                    repeatx=1024,
+                    repeaty=1024,
+                    base=base)
+
+                for k in range(1, len(bound)):
+                    if world1[i][j] < bound[k]:
+                        world[i][j] = composition[k - 1]
+                        break
+
+        return world
+
+    ####################################################################
     def grow_terrain(self):
 
         if self.food_activated:
-            self.screen.fill(settings.cTerrain)
+            if self.show_terrain:
+                self.screen.fill(settings.cTerrain)
 
             for i in range(self.xmin, self.xmax):
                 for j in range(self.ymin, self.ymax):
 
-                    if self.terrain_type[i][j] == "g" and self.terrain_original[i][j] != "g":
-                        self.terrain_age[i][j] += 1
-                        if self.terrain_age[i][j] > self.food_growth_gap:
-                            self.terrain_type[i][j] = self.terrain_original[i][j]
+                    self.terrain_age[i][j] += 1
+                    if self.terrain_age[i][j] > self.food_growth_gap and \
+                            self.terrain_type[i][j] != self.terrain_type_original[i][j]:
+                        for k in range(0, len(self.terrain_evolution)):
+                            if self.terrain_type_original[i][j] == self.terrain_evolution[k][0] and \
+                                    self.terrain_type[i][j] == self.terrain_evolution[k][1]:
+                                self.terrain_type[i][j] = self.terrain_type_original[i][j]
 
                     if self.show_terrain and self.terrain_type[i][j] == "g":
                         self.screen.set_at((i, j), settings.cBkg)
                     elif self.show_terrain and self.terrain_type[i][j] == "i":
                         self.screen.set_at((i, j), settings.pygame.Color("dimgray"))
-
-            # pygame.display.update()
 
         return
 
@@ -661,10 +712,22 @@ class Colony:
             direction = bacteria["Last Direction"]
             bacteria["Next Run"] -= 1
 
-        x = int((bacteria["Position"][0] + direction[0] * bacteria["Size"] * (bacteria["Speed"] / 10))) % \
-            settings.display_size[0]
-        y = int((bacteria["Position"][1] + direction[1] * bacteria["Size"] * (bacteria["Speed"] / 10))) % \
-            settings.display_size[1]
+        x = int((bacteria["Position"][0] + direction[0] * bacteria["Size"] * (bacteria["Speed"] / 10))) % settings.display_size[0]
+        y = int((bacteria["Position"][1] + direction[1] * bacteria["Size"] * (bacteria["Speed"] / 10))) % settings.display_size[1]
+
+        if bacteria["Category"] == "prey" and bacteria["Food"][:1] != self.terrain_type[x][y]:
+            directions = copy.deepcopy(settings.directions)
+            random.shuffle(directions)
+            for i in range(0, len(directions)):
+                a = int((bacteria["Position"][0] + directions[i][0] * bacteria["Size"] * (bacteria["Speed"] / 10))) % settings.display_size[0]
+                b = int((bacteria["Position"][1] + directions[i][1] * bacteria["Size"] * (bacteria["Speed"] / 10))) % settings.display_size[1]
+                if self.terrain_type[a][b] == bacteria["Food"][:1]:
+                    x = a
+                    y = b
+                    bacteria["Last Direction"] = directions[i]
+                    bacteria["Next Run"] = random.randint(1, bacteria["Max Run"])
+                    break
+
         bacteria["Position"] = (x, y)
 
         return bacteria
@@ -790,7 +853,9 @@ class Colony:
                 for j in range(0, int(bacteria1["Size"])):
                     y = min(bacteria1["Position"][1] - int(bacteria1["Size"]/2) + j, self.ymax-1)
                     if self.terrain_type[x][y] == bacteria1["Food"][:1] or bacteria1["Food"] == "all":
-                        self.terrain_type[x][y] = "g"
+                        for k in range(0, len(self.terrain_evolution)):
+                            if bacteria1["Food"][:1] == self.terrain_evolution[k][0] or bacteria1["Food"] == "all":
+                                self.terrain_type[x][y] = self.terrain_evolution[k][1]
                         self.terrain_age[x][y] = 0
                         eaten = True
 

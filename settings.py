@@ -23,8 +23,6 @@ reproduction = ["sex", "mitosis", "hermaphrodite"]
 foods = ["organic", "inorganic", "preys", "all"]
 
 terrains = ["g", "o", "i"]        # (saving memory) g - ground / o - organic / i - inorganic
-terrain_composition = ["o"]
-terrain_evolution = [("o", "i"), ("i", "o"), ("g", "g")]
 
 fauna = [
     {"Name": "Green Bacteria",
@@ -70,7 +68,7 @@ fauna = [
      "Size Gap": "addition",
      "Last Move": 0,
      "Icon File": "Virus1",
-     "Rotate": True,
+     "Rotate": False,
      "Icon Index": 0
      },
 
@@ -164,7 +162,7 @@ fauna = [
      "Size Gap": "addition",
      "Last Move": 0,
      "Icon File": "Virus3",
-     "Rotate": True,
+     "Rotate": False,
      "Icon Index": 3
      },
 
@@ -210,7 +208,7 @@ fauna = [
      "Size Gap": "addition",
      "Last Move": 0,
      "Icon File": "Virus4",
-     "Rotate": True,
+     "Rotate": False,
      "Icon Index": 3
      }
 ]
@@ -273,7 +271,7 @@ presskey_color = pygame.Color("white")
 options = "OPTIONS"
 options_title_color = pygame.Color("orange")
 options_color = pygame.Color("white")
-food_growth_tip = "150 if no predator and hermaphrodite / 25-50 if no predator and sex / 50 if predator present"
+food_growth_tip = "150 no predator and hermaphrodite / 25-50 if no predator and sex / 50 if predator"
 category_tip = "prey / predator / both"
 food_tip = "organic / inorganic / preys / all"
 reproduction_tip = "hermaphrodite / hermaphrodite / sex"
@@ -301,6 +299,12 @@ values_font_size = int(display_size[0]*12/1280)
 intro_icon_gap = [(80, 180), (170, 75), (120, 80), (220, 200)]
 intro_icon_pos = [(0, 1), (1, 0), (0, 0), (1, 1)]
 
+# PROCEDURAL TERRAIN
+terrain_composition = ["i", "o", "g"]
+terrain_prob = [46, 8, 46]
+terrain_evolution = [("i", "o"), ("o", "g"), ("g", "i")]
+terrain_composition_normal = ["o"]
+terrain_evolution_normal = [("o", "g")]
 
 """ MITOSIS SCENARIOS:
 
