@@ -51,9 +51,9 @@ class Colony:
         else:
             self.terrain_composition = settings.terrain_composition_normal
             self.terrain_evolution = settings.terrain_evolution_normal
+        self.terrain_prob = settings.terrain_prob
         self.logging = settings.logging
         self.logging_verbose = settings.logging_verbose
-        self.terrain_prob = settings.terrain_prob
 
         self.first_run = True
         self.chosen_fauna = []
@@ -311,21 +311,23 @@ class Colony:
         self.food_growth_gap = int(value[4])
         self.show_terrain = value[5]
         self.procedural_terrain = value[6]
-        if self.procedural_terrain:
-            self.terrain_composition = settings.terrain_composition
-            self.terrain_evolution = settings.terrain_evolution
-        else:
-            self.terrain_composition = settings.terrain_composition_normal
-            self.terrain_evolution = settings.terrain_evolution_normal
         self.logging = value[7]
         self.logging_verbose = value[8]
         if value[9] != settings.colony_diversity:
             self.colony_diversity = value[9].split(",")
             for i in range(0, len(self.colony_diversity)):
                 self.colony_diversity[i] = int(self.colony_diversity[i])
-        if value[10] != settings.terrain_composition_tip:
-            self.terrain_composition = value[10].split(",")
-            self.terrain_prob = None
+        if self.procedural_terrain:
+            if value[10] != settings.terrain_composition_tip:
+                self.terrain_composition = value[10].split(",")
+                self.terrain_prob = None
+            else:
+                self.terrain_composition = settings.terrain_composition
+                self.terrain_prob = settings.terrain_prob
+            self.terrain_evolution = settings.terrain_evolution
+        else:
+            self.terrain_composition = settings.terrain_composition_normal
+            self.terrain_evolution = settings.terrain_evolution_normal
 
         return
 
@@ -488,7 +490,6 @@ class Colony:
                 self.terrain_type = self.generate_noise_map(self.xmax, self.ymax, self.terrain_composition, self.terrain_prob)
             else:
                 self.terrain_type = [[self.terrain_composition[0] for y in range(self.ymax)] for x in range(self.xmax)]
-            print(self.terrain_type)
             self.terrain_type_original = copy.deepcopy(self.terrain_type)
             self.terrain_age = [[0 for y in range(self.ymax)] for x in range(self.xmax)]
 
@@ -643,8 +644,7 @@ class Colony:
                 if colony[i]["Category"] == "prey" or colony[i]["Food"] == "all":
                     eaten, colony[i], foo = self.check_feed(colony[i])
 
-                if colony[i]["Category"] in ("predator", "both") or \
-                        colony[i]["Reproduction"] == "sex":
+                if colony[i]["Category"] in ("predator", "both") or colony[i]["Reproduction"] == "sex":
 
                     for j in range(0, len(colony)):
                         if i != j:
@@ -855,25 +855,24 @@ class Colony:
                           bacteria2["Name"], "Age:", bacteria2["Age"], "Size:", bacteria2["Size"])
 
         if (bacteria1["Category"] == "prey" or (bacteria1["Food"] == "all" and bacteria2 is None)) and self.food_activated:
-            for i in range(0, int(bacteria1["Size"])):
-                #x = bacteria1["Position"][0] + int(bacteria1["Size"]/2) / 2 * math.sin(math.radians(angle))
-                #y = bacteria1["Position"][0] + int(bacteria1["Size"]/2) / 2 * (-1) * math.cos(math.radians(angle))
-                x = min(bacteria1["Position"][0] - int(bacteria1["Size"]/2) + i, self.xmax-1)
-                for j in range(0, int(bacteria1["Size"])):
-                    y = min(bacteria1["Position"][1] - int(bacteria1["Size"]/2) + j, self.ymax-1)
-                    if self.terrain_type[x][y] == bacteria1["Food"][:1] or bacteria1["Food"] == "all":
-                        if bacteria1["Food"] == "all":
-                            for k in range(0, len(self.terrain_evolution)):
-                                if self.terrain_type[x][y] == self.terrain_evolution[k][0]:
-                                    self.terrain_type[x][y] = self.terrain_evolution[k][1]
-                                    break
-                        else:
-                            for k in range(0, len(self.terrain_evolution)):
-                                if bacteria1["Food"][:1] == self.terrain_evolution[k][0]:
-                                    self.terrain_type[x][y] = self.terrain_evolution[k][1]
-                                    break
-                        self.terrain_age[x][y] = 0
-                        eaten = True
+            for i in range(0, int(bacteria1["Size"]*2)):
+                x = min(bacteria1["Position"][0] - int(bacteria1["Size"]) + i, self.xmax-1)
+                for j in range(0, int(bacteria1["Size"]*2)):
+                    y = min(bacteria1["Position"][1] - int(bacteria1["Size"]) + j, self.ymax-1)
+                    if math.sqrt((bacteria1["Position"][0] - x) ** 2 + (bacteria1["Position"][1] - y) ** 2) <= bacteria1["Size"]*0.7:
+                        if self.terrain_type[x][y] == bacteria1["Food"][:1] or bacteria1["Food"] == "all":
+                            if bacteria1["Food"] == "all":
+                                for k in range(0, len(self.terrain_evolution)):
+                                    if self.terrain_type[x][y] == self.terrain_evolution[k][0]:
+                                        self.terrain_type[x][y] = self.terrain_evolution[k][1]
+                                        break
+                            else:
+                                for k in range(0, len(self.terrain_evolution)):
+                                    if bacteria1["Food"][:1] == self.terrain_evolution[k][0]:
+                                        self.terrain_type[x][y] = self.terrain_evolution[k][1]
+                                        break
+                            self.terrain_age[x][y] = 0
+                            eaten = True
 
         return eaten, bacteria1, bacteria2
 
@@ -1029,7 +1028,7 @@ class Colony:
             if event["Key"] == pygame.K_d:
                 for i in range(0, len(colony)):
                     colony[i]["Status"] = "dead"
-                print("ALL COLONY KILLED!!!! caused %s casualties. Deliver us from evil...")
+                print("ALL COLONY KILLED!!!! caused %s casualties. Deliver us from evil..." % len(colony))
 
             if event["Key"] == pygame.K_r:
                 importlib.reload(settings)

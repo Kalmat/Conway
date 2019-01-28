@@ -278,7 +278,7 @@ options_title_color = pygame.Color("orange")
 options_color = pygame.Color("white")
 food_growth_tip = "150 no predator and hermaphrodite / 25-50 if no predator and sex / 50 if predator"
 category_tip = "prey / predator / both"
-food_tip = "organic / inorganic / preys / all"
+food_tip = "organic / inorganic / ground / preys / all"
 reproduction_tip = "hermaphrodite / hermaphrodite / sex"
 starvation_tip = "20+ if only predators and hermaphrodite / 6 if only preys and sex / 5-10 if both"
 speed_tip = "(min) 1 to 20 (max)  / 10 for everyone if Food Mode not Activated"
@@ -303,6 +303,26 @@ values_font_size = int(display_size[0]*12/1280)
 # POSITIONS
 intro_icon_gap = [(80, 180), (170, 75), (120, 80), (220, 200)]
 intro_icon_pos = [(0, 1), (1, 0), (0, 0), (1, 1)]
+
+
+""" PROCEDURAL MAP SCENARIOS:
+
+### JUST PREYS
+Food Growth: 100
+Procedural map: True
+Prey 1 organic / mitosis
+Prey 2 inorganic / mitosis
+Prey 3 ground / mitosis
+
+### ALL
+Food Growth: 50
+Procedural map: True
+Prey 1 organic / mitosis
+Prey 2 inorganic / mitosis
+Prey 3 ground / mitosis
+Predator Starvation 6-7 / hermaphrodite
+
+"""
 
 """ MITOSIS SCENARIOS:
 
