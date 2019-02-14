@@ -172,15 +172,15 @@ fauna = [
      "Reproduction": "hermaphrodite",
      "Food": "prey",
      "Last Dinner": 0,
-     "Starvation Limit": 10,
+     "Starvation Limit": 5,
      "Starvation Init Ratio": 0.2,
      "Starvation Init Point": 200,
-     "Starvation Size Ratio": 0.4,
-     "Starvation Size Limit": 8,
+     "Starvation Size Ratio": 0.2,
+     "Starvation Size Limit": 4,
      "Hunt Randomize": True,
      "Hunt Success": 3,
      "Birth Size": 1,
-     "Maturity Size": 10,
+     "Maturity Size": 20,
      "Growth Gap": 10,
      "Overgrowth": True,
      "Max Size": 20,
@@ -256,8 +256,10 @@ grave_img = "Grave"
 # https://htmlcolorcodes.com/color-names/
 cBkg = pygame.Color('black')
 cBkg_highlighted = pygame.Color("cadetblue4")
-cTerrain = pygame.Color("darkslategrey")
 cButton = pygame.Color("red")
+cOrganic = pygame.Color("darkslategrey")
+cInorganic = pygame.Color("dimgray")
+cGround = pygame.Color("black")
 
 # TEXTS AND FONTS
 caption = "Bacteria Jungle"
@@ -326,7 +328,7 @@ Predator Starvation 6-7 / hermaphrodite
 
 """ MITOSIS SCENARIOS:
 
-### ALL    ************** TESTED OK!
+### ALL
 Food Growth: 50
 All Preys - mitosis / Starvation 5
 Predator - hermaphrodite / Starvation 10
@@ -367,7 +369,7 @@ Predator: Category: Predator / Reproduction None / Speed 10 / Size 21 (no overgr
 ## HUNGER NOT
 Food Activated = True
 Colony Fauna = 0,3,3,3,3,3,3,3,3,3
-One Prey: Longevity 100
+One Prey: Longevity 100 / Maturity Init Ratio 1.0
 Predator Category predator / Reproduction none / Hunt Success 0
 
 """

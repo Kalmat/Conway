@@ -254,6 +254,22 @@ def FadeOut(screen, img, rect, time=1, color_filter=(0, 0, 0)):
     return
 
 
+"""
+        # FadeIn/FadeOut EXAMPLE
+        # MUST use a different Surface to blit the text/image first, then fade it on main Surface
+        srf = pygame.Surface( (rect[2], rect[3]) )
+        pygame.draw.rect( srf, nBkg, (0,0,rect[2],rect[3]) )
+        font = pygame.font.SysFont( self.fn, size, bold)
+        rtext = font.render( "Texto de prueba para FadeIn / FadeOut", True, white )
+        srf.blit( rtext, (0,0) )
+        img = Screenshot( srf, (0, 0, rect[2], rect[3])
+        while True:
+            FadeIn( self.screen, img, rect, 2, nBkg )
+            sleep(5)
+            FadeOut( self.screen, img, rect, 2, nBkg )
+"""
+
+
 ####################################################################
 def WrapText(text, font, width):
     # ColdrickSotK
@@ -397,23 +413,7 @@ def measure_temp(archOS):
     else:
         temp = "n/a"
 
-    return (temp.replace("temp=", ""))
-
-
-"""
-        # FadeIn/FadeOut EXAMPLE
-        # MUST use a different Surface to blit the text/image first, then fade it on main Surface
-        srf = pygame.Surface( (rect[2], rect[3]) )
-        pygame.draw.rect( srf, nBkg, (0,0,rect[2],rect[3]) )
-        font = pygame.font.SysFont( self.fn, size, bold)
-        rtext = font.render( "Texto de prueba para FadeIn / FadeOut", True, white )
-        srf.blit( rtext, (0,0) )
-        img = Screenshot( srf, (0, 0, rect[2], rect[3])
-        while True:
-            FadeIn( self.screen, img, rect, 2, nBkg )
-            sleep(5)
-            FadeOut( self.screen, img, rect, 2, nBkg )
-"""
+    return temp.replace("temp=", "")
 
 
 ####################################################################
@@ -478,7 +478,8 @@ def InputBox(screen, rect, back_color=pygame.Color('black'), line_color=pygame.C
     cursor = "|"
     fontObj = LoadFont(font, font_size)
     box = pygame.Rect(rect)
-    ekey = etype = 0
+    ekey = 0
+    etype = 0
     epos = (0, 0)
 
     # Enter "read-character/draw-text" loop
