@@ -887,7 +887,7 @@ class Colony:
                     bacteria2["Category"] != "predator" and \
                     (bacteria1["Size"] > bacteria2["Size"] or
                         (bacteria1["Size"] == bacteria2["Size"] and bacteria1["Age"] > bacteria2["Age"])) and \
-                    (((bacteria1["Hunt Randomize"] and random.randint(1, bacteria1["Hunt Success"])) != 1) or
+                    ((bacteria1["Hunt Randomize"] and random.randint(1, bacteria1["Hunt Success"]) != 1) or
                      not bacteria1["Hunt Randomize"]):
                 bacteria2["Status"] = "dead"
                 size = bacteria1["Size"]
@@ -1065,8 +1065,8 @@ class Colony:
             elif event["Key"] == pygame.K_v:
                 self.logging_verbose = not self.logging_verbose
 
-            elif event["Key"] in (pygame.K_l, pygame.K_g):
-                if event["Key"] == pygame.K_l:
+            elif event["Key"] in (pygame.K_c, pygame.K_g):
+                if event["Key"] == pygame.K_c:
                     icon = disputil.loadIcon("Lightning", settings.icons_folder)
                 else:
                     icon = disputil.loadIcon("Godzilla", settings.icons_folder)
