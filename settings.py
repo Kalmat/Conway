@@ -9,7 +9,7 @@ show_icons = True
 show_values = False
 food_activated = True
 show_terrain = False
-food_growth_gap = 50
+food_growth_gap = 75
 logging = True
 logging_verbose = False
 show_intro = True
@@ -23,7 +23,6 @@ reproduction = ["sex", "mitosis", "hermaphrodite"]
 foods = ["organic", "inorganic", "preys", "all"]
 terrains = ["g", "o", "i"]        # (saving memory) g - ground / o - organic / i - inorganic
 directions = [(-1, 0), (-1, 1), (0, 1), (1, 1), (1, 0), (1, -1), (0, -1), (-1, -1)]
-
 fauna = [
     {"Name": "Green Bacteria",
      "Category": "prey",
@@ -172,11 +171,11 @@ fauna = [
      "Reproduction": "hermaphrodite",
      "Food": "prey",
      "Last Dinner": 0,
-     "Starvation Limit": 5,
+     "Starvation Limit": 10,
      "Starvation Init Ratio": 0.2,
      "Starvation Init Point": 200,
-     "Starvation Size Ratio": 0.2,
-     "Starvation Size Limit": 4,
+     "Starvation Size Ratio": 0.3,
+     "Starvation Size Limit": 6,
      "Hunt Randomize": True,
      "Hunt Success": 3,
      "Birth Size": 1,
@@ -195,7 +194,7 @@ fauna = [
      "Maturity Init Point": 200,
      "Maturity End Point": 800,
      "Gestation Time": 1,
-     "Gestation Gap": 10,
+     "Gestation Gap": 50,
      "Last Gestation": 0,
      "Gestation Size Ratio": 0.8,
      "Gestation Size Limit": 16,
@@ -210,8 +209,7 @@ fauna = [
      "Icon File": "Virus4",
      "Rotate": False,
      "Icon Index": 3
-     }
-]
+     }]
 
 # TERRAIN
 terrain_composition = ["i", "o", "g"]
@@ -260,6 +258,7 @@ cButton = pygame.Color("red")
 cOrganic = pygame.Color("darkslategrey")
 cInorganic = pygame.Color("dimgray")
 cGround = pygame.Color("black")
+terrain_colors = [("o", cOrganic), ("i", cInorganic), ("g", cGround)]
 
 # TEXTS AND FONTS
 caption = "Bacteria Jungle"
@@ -307,31 +306,21 @@ intro_icon_gap = [(80, 180), (170, 75), (120, 80), (220, 200)]
 intro_icon_pos = [(0, 1), (1, 0), (0, 0), (1, 1)]
 
 
-""" PROCEDURAL MAP SCENARIOS:
-
-### JUST PREYS
-Food Growth: 100
-Procedural map: True
-Prey 1 organic / mitosis
-Prey 2 inorganic / mitosis
-Prey 3 ground / mitosis
+""" MIXED SCENARIOS
 
 ### ALL
-Food Growth: 50
-Procedural map: True
-Prey 1 organic / mitosis
-Prey 2 inorganic / mitosis
-Prey 3 ground / mitosis
-Predator Starvation 6-7 / hermaphrodite
+Food Growth: 75
+All Preys - mitosis / Starvation 5
+Predator - hermaphrodite / Starvation 5 / Gestation Gap 50
 
 """
 
 """ MITOSIS SCENARIOS:
 
 ### ALL
-Food Growth: 50
+Food Growth: 75
 All Preys - mitosis / Starvation 5
-Predator - hermaphrodite / Starvation 10
+Predator - mitosis / Starvation 5 / Hunt Randomize 0
 
 """
 
@@ -369,7 +358,7 @@ Predator: Category: Predator / Reproduction None / Speed 10 / Size 21 (no overgr
 ## HUNGER NOT
 Food Activated = True
 Colony Fauna = 0,3,3,3,3,3,3,3,3,3
-One Prey: Longevity 100 / Maturity Init Ratio 1.0
+One Prey: Longevity 100 / Maturity Init Ratio 0.001 / Gestation Gap 1
 Predator Category predator / Reproduction none / Hunt Success 0
 
 """
@@ -379,5 +368,24 @@ Predator Category predator / Reproduction none / Hunt Success 0
 ### JUST PREYS
 Food Growth: 50
 One Prey - Sex / Starvation 6-7
+
+"""
+
+""" PROCEDURAL MAP SCENARIOS:
+
+### JUST PREYS
+Food Growth: 100
+Procedural map: True
+Prey 1 organic / mitosis
+Prey 2 inorganic / mitosis
+Prey 3 ground / mitosis
+
+### ALL
+Food Growth: 50
+Procedural map: True
+Prey 1 organic / mitosis
+Prey 2 inorganic / mitosis
+Prey 3 ground / mitosis
+Predator Starvation 6-7 / hermaphrodite
 
 """

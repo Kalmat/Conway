@@ -501,12 +501,9 @@ class Colony:
             if self.show_terrain:
                 for x in range(self.xmax):
                     for y in range(self.ymax):
-                        if self.terrain_type[x][y] == "o":
-                            self.screen.set_at((x, y), settings.cOrganic)
-                        elif self.terrain_type[x][y] == "g":
-                            self.screen.set_at((x, y), settings.cGround)
-                        elif self.terrain_type[x][y] == "i":
-                            self.screen.set_at((x, y), settings.cInorganic)
+                        for k in range(len(settings.terrain_colors)):
+                            if self.terrain_type[x][y] == settings.terrain_colors[k][0]:
+                                self.screen.set_at((x, y), settings.terrain_colors[k][1])
 
                 pygame.display.flip()
                 self.terrain = disputil.Screenshot(self.screen, (self.xmin, self.ymin, self.xmax, self.ymax))
@@ -572,12 +569,9 @@ class Colony:
                             break
 
                     if self.show_terrain:
-                        if self.terrain_type[x][y] == "o":
-                            self.terrain.set_at((x, y), settings.cOrganic)
-                        elif self.terrain_type[x][y] == "g":
-                            self.terrain.set_at((x, y), settings.cGround)
-                        elif self.terrain_type[x][y] == "i":
-                            self.terrain.set_at((x, y), settings.cInorganic)
+                        for k in range(len(settings.terrain_colors)):
+                            if self.terrain_type[x][y] == settings.terrain_colors[k][0]:
+                                self.terrain.set_at((x, y), settings.terrain_colors[k][1])
 
             self.terrain_eaten[self.colony_age % self.food_growth_gap] = []
 
@@ -623,17 +617,17 @@ class Colony:
         bacteria["Last Direction"] = random.choice(settings.directions)
         bacteria["Maturity Init Point"] = int(bacteria["Longevity"] * bacteria["Maturity Init Ratio"])
         bacteria["Maturity End Point"] = int(bacteria["Longevity"] * bacteria["Maturity End Ratio"])
-        bacteria["Age"] = random.randint(0, int(bacteria_settings["Maturity Init Point"]/4))
+        bacteria["Age"] = random.randint(0, int(bacteria_settings["Maturity Init Point"] / 4))
         if not bacteria["Overgrowth"]:
             bacteria["Maturity Size"] = max(bacteria["Maturity Size"], bacteria["Max Size"])
-        bacteria["Growth Gap"] = int(bacteria["Maturity Init Point"] / bacteria["Maturity Size"])
+        bacteria["Growth Gap"] = max(int(bacteria["Maturity Init Point"] / bacteria["Maturity Size"]), 1)
         bacteria["Starvation Init Point"] = int(bacteria["Longevity"] * bacteria["Starvation Init Ratio"])
         if bacteria["Category"] == "prey":
             bacteria["Starvation Limit"] = min(bacteria["Starvation Limit"], self.food_growth_gap - 1)
         bacteria["Starvation Size Limit"] = int(max(bacteria["Maturity Size"] * bacteria["Starvation Size Ratio"], bacteria["Max Size"] * bacteria["Starvation Size Ratio"]))
         bacteria["Last Dinner"] = bacteria["Starvation Limit"]
         if bacteria["Hunt Success"] < 1:
-            bacteria["Hunt Success"] = 1
+            # bacteria["Hunt Success"] = 1
             bacteria["Hunt Randomize"] = False
         bacteria["Gestation Size Limit"] = int(max(bacteria["Maturity Size"] * bacteria["Gestation Size Ratio"], bacteria["Max Size"] * bacteria["Gestation Size Ratio"]))
         bacteria["Last Gestation"] = bacteria["Gestation Gap"]
@@ -786,7 +780,7 @@ class Colony:
     ####################################################################
     def check_age(self, bacteria):
 
-        if bacteria["Age"] > bacteria["Longevity"]:
+        if bacteria["Age"] > bacteria["Longevity"] and bacteria["Reproduction"] != "mitosis":
             bacteria["Status"] = "dead"
             if self.logging_verbose:
                 print(bacteria["Name"], "died of old at age", bacteria["Age"])
@@ -888,7 +882,7 @@ class Colony:
                     (bacteria1["Size"] > bacteria2["Size"] or
                         (bacteria1["Size"] == bacteria2["Size"] and bacteria1["Age"] > bacteria2["Age"])) and \
                     ((bacteria1["Hunt Randomize"] and random.randint(1, bacteria1["Hunt Success"]) != 1) or
-                     not bacteria1["Hunt Randomize"]):
+                        not bacteria1["Hunt Randomize"]):
                 bacteria2["Status"] = "dead"
                 size = bacteria1["Size"]
                 if bacteria1["Overgrowth"]:
@@ -909,8 +903,8 @@ class Colony:
                           "| COULDN'T EAT |",
                           bacteria2["Name"], "Age:", bacteria2["Age"], "Size:", bacteria2["Size"])
 
-        gap = 0.7
         if (bacteria1["Category"] == "prey" or (bacteria1["Food"] == "all" and bacteria2 is None)) and self.food_activated:
+            gap = 0.7
             for i in range(int(bacteria1["Size"]*gap*2)):
                 x = (bacteria1["Position"][0] - int(bacteria1["Size"]*gap) + i) % self.xmax
                 for j in range(int(bacteria1["Size"]*gap*2)):
@@ -922,16 +916,13 @@ class Colony:
                                         bacteria1["Food"][:1] == self.terrain_evolution[k][0]:
                                     self.terrain_type[x][y] = self.terrain_evolution[k][1]
                                     break
-                            self.terrain_eaten[self.colony_age % self.food_growth_gap].append((x, y))
+                            self.terrain_eaten[self.colony_age % self.food_growth_gap].append([x, y])
                             eaten = True
 
-                            if self.show_terrain:
-                                if self.terrain_type[x][y] == "o":
-                                    self.terrain.set_at((x, y), settings.cOrganic)
-                                elif self.terrain_type[x][y] == "g":
-                                    self.terrain.set_at((x, y), settings.cGround)
-                                elif self.terrain_type[x][y] == "i":
-                                    self.terrain.set_at((x, y), settings.cInorganic)
+                        if self.show_terrain:
+                            for k in range(len(settings.terrain_colors)):
+                                if self.terrain_type[x][y] == settings.terrain_colors[k][0]:
+                                    self.terrain.set_at((x, y), settings.terrain_colors[k][1])
 
         return eaten, bacteria1, bacteria2
 
