@@ -171,7 +171,7 @@ fauna = [
      "Reproduction": "hermaphrodite",
      "Food": "prey",
      "Last Dinner": 0,
-     "Starvation Limit": 10,
+     "Starvation Limit": 5,
      "Starvation Init Ratio": 0.2,
      "Starvation Init Point": 200,
      "Starvation Size Ratio": 0.3,
@@ -183,7 +183,7 @@ fauna = [
      "Growth Gap": 10,
      "Overgrowth": True,
      "Max Size": 20,
-     "Speed": 10,
+     "Speed": 7,
      "Last Direction": (0,0),
      "Max Run": 50,
      "Longevity": 1000,
@@ -213,7 +213,7 @@ fauna = [
 
 # TERRAIN
 terrain_composition = ["i", "o", "g"]
-terrain_prob = [46, 8, 46]
+terrain_prob = [46, 8, 46]         # Values tend to approach to the center (0). Try other probs (e.g. [40, 12, 40]) or other compositions (e.g. [i,o,g,o,i,o,g])
 terrain_evolution = [("i", "o"), ("o", "g"), ("g", "i")]
 terrain_composition_normal = ["o"]
 terrain_evolution_normal = [("o", "g")]
@@ -320,7 +320,7 @@ Predator - hermaphrodite / Starvation 5 / Gestation Gap 50
 ### ALL
 Food Growth: 75
 All Preys - mitosis / Starvation 5
-Predator - mitosis / Starvation 5 / Hunt Randomize 0
+Predator - mitosis / Starvation 7 / Hunt Randomize 0
 
 """
 

@@ -14,6 +14,24 @@ import disputil
 
 
 ###############################################################################
+class Bacteria(pygame.sprite.Sprite):
+
+    ####################################################################
+    def __init__(self, image):
+        super().__init__()
+        self.image = image
+        self.image.set_colorkey(pygame.Color("black"))
+        self.rect = self.image.get_rect()
+        self.index = 0
+
+    def set_index(self, index):
+        self.index = index
+
+    def get_index(self):
+        return self.index
+
+
+###############################################################################
 class Colony:
 
     ####################################################################
@@ -62,12 +80,13 @@ class Colony:
         self.terrain_type = []
         self.terrain_type_original = []
         self.terrain_eaten = [[] for x in range(self.food_growth_gap)]
-        self.sectors = [[] for x in range(32)]
         self.colony_age = 0
         self.average = 0
         self.keyP = ""
         self.predators = 0
         self.preys = 0
+
+        self.group_all = pygame.sprite.Group()
 
     ####################################################################
     def intro(self):
@@ -588,9 +607,11 @@ class Colony:
         print("Food Growth:", self.food_growth_gap)
 
         for i in range(0, len(self.chosen_fauna)):
-            for j in range(0, int(self.init_bacteria_number / len(self.chosen_fauna))):
-                colony.append(myColony.birth(self.fauna[self.chosen_fauna[i]], i))
             self.icon.append(disputil.loadIcon(self.fauna[self.chosen_fauna[i]]["Icon File"], settings.icons_folder))
+            for j in range(0, int(self.init_bacteria_number / len(self.chosen_fauna))):
+                bacteria = self.birth(self.fauna[self.chosen_fauna[i]], i)
+                bacteria["Sprite"].set_index(len(colony) + 1)
+                colony.append(bacteria)
 
             print(self.fauna[self.chosen_fauna[i]]["Name"], int((self.init_bacteria_number / len(self.chosen_fauna)) / self.init_bacteria_number * 100), "%", "| Category:", self.fauna[self.chosen_fauna[i]]["Category"], "| Food:", self.fauna[self.chosen_fauna[i]]["Food"], "| Reproduction:", self.fauna[self.chosen_fauna[i]]["Reproduction"], "| Starvation Limit:", self.fauna[self.chosen_fauna[i]]["Starvation Limit"], "| Gestation Gap:",self.fauna[self.chosen_fauna[i]]["Gestation Gap"])
         print()
@@ -612,8 +633,7 @@ class Colony:
             bacteria["Position"] = random.randint(self.xmin, self.xmax), random.randint(self.ymin, self.ymax)
         bacteria["Size"] = bacteria_settings["Birth Size"]
         bacteria["Speed"] = min(20, bacteria_settings["Speed"])
-        bacteria["Last Move"] = 0
-        bacteria["Next Run"] = random.randint(0, bacteria["Max Run"])
+        bacteria["Next Run"] = random.randint(1, bacteria["Max Run"])
         bacteria["Last Direction"] = random.choice(settings.directions)
         bacteria["Maturity Init Point"] = int(bacteria["Longevity"] * bacteria["Maturity Init Ratio"])
         bacteria["Maturity End Point"] = int(bacteria["Longevity"] * bacteria["Maturity End Ratio"])
@@ -622,16 +642,52 @@ class Colony:
             bacteria["Maturity Size"] = max(bacteria["Maturity Size"], bacteria["Max Size"])
         bacteria["Growth Gap"] = max(int(bacteria["Maturity Init Point"] / bacteria["Maturity Size"]), 1)
         bacteria["Starvation Init Point"] = int(bacteria["Longevity"] * bacteria["Starvation Init Ratio"])
-        if bacteria["Category"] == "prey":
-            bacteria["Starvation Limit"] = min(bacteria["Starvation Limit"], self.food_growth_gap - 1)
         bacteria["Starvation Size Limit"] = int(max(bacteria["Maturity Size"] * bacteria["Starvation Size Ratio"], bacteria["Max Size"] * bacteria["Starvation Size Ratio"]))
         bacteria["Last Dinner"] = bacteria["Starvation Limit"]
         if bacteria["Hunt Success"] < 1:
-            # bacteria["Hunt Success"] = 1
+            bacteria["Hunt Success"] = 1
             bacteria["Hunt Randomize"] = False
         bacteria["Gestation Size Limit"] = int(max(bacteria["Maturity Size"] * bacteria["Gestation Size Ratio"], bacteria["Max Size"] * bacteria["Gestation Size Ratio"]))
         bacteria["Last Gestation"] = bacteria["Gestation Gap"]
         bacteria["Icon Index"] = icon
+        bacteria["Sprite"] = None
+
+        bacteria = self.load_sprite(bacteria)
+
+        return bacteria
+
+    ####################################################################
+    def load_sprite(self, bacteria):
+
+        change_sprite = False
+        ix = iy = bacteria["Size"] * 2
+
+        if bacteria["Sprite"] is None:
+            change_sprite = True
+
+        else:
+            if ix != bacteria["Sprite"].rect[2] or iy != bacteria["Sprite"].rect[3] or \
+                    (bacteria["Rotate"] and bacteria["Next Run"] == 0):
+                change_sprite = True
+                bacteria["Sprite"].kill()
+
+        if change_sprite:
+            if self.show_icons:
+                img = self.icon[bacteria["Icon Index"]]
+                img = pygame.transform.smoothscale(img, (ix, iy))
+                if bacteria["Rotate"]:
+                    img = pygame.transform.rotate(img, random.choice([0, 30, 60, 90, 120, 150, 180, 210, 240, 270]))
+
+            else:
+                img = pygame.Surface((bacteria["Size"]*2, bacteria["Size"]*2))
+                pygame.draw.circle(img, bacteria["Color"], (bacteria["Size"], bacteria["Size"]), int(bacteria["Size"]), 0)
+
+            bacteria_sprite = Bacteria(img)
+            bacteria_sprite.rect.x = bacteria["Position"][0]
+            bacteria_sprite.rect.y = bacteria["Position"][1]
+            bacteria["Sprite"] = bacteria_sprite
+
+            self.group_all.add(bacteria_sprite)
 
         return bacteria
 
@@ -639,21 +695,25 @@ class Colony:
     def evolve(self, colony):
 
         next_generation = []
-        self.sectors = [[] for x in range(32)]
         self.predators = 0
         self.preys = 0
         population = len(colony)
+
+        clock = pygame.time.Clock()
+        clock.tick(population * 12 / 100)
+
+        self.draw()
 
         for i in range(population):
             son = None
             eaten = False
 
             colony[i] = self.check_age(colony[i])
-            self.draw(colony[i], i, population)
 
             if colony[i]["Status"] == "alive":
 
-                colony[i] = self.move(colony[i], i)
+                self.check_image(colony[i])
+                colony[i] = self.move(colony[i])
 
                 if colony[i]["Reproduction"] in ("mitosis", "hermaphrodite"):
                     son, colony[i], foo = self.check_reproduction(colony[i])
@@ -663,11 +723,14 @@ class Colony:
 
                 if colony[i]["Reproduction"] == "sex" or colony[i]["Category"] in ("predator", "both"):
 
-                    for k in range(len(self.sectors[colony[i]["Sector"]])):
+                    hit_list = pygame.sprite.spritecollide(colony[i]["Sprite"], self.group_all, dokill=False)
 
-                        j = self.sectors[colony[i]["Sector"]][k]["Index"]
+                    for bacteria in hit_list:
 
-                        if i != j and colony[j]["Status"] == "alive":
+                        j = bacteria.get_index() - 1
+
+                        if j >= 0 and colony[j]["Status"] == "alive":
+
                             if self.check_collision(colony[i], colony[j]):
 
                                 if colony[i]["Reproduction"] == "sex":
@@ -681,41 +744,28 @@ class Colony:
                 colony[i] = self.check_growth(colony[i], eaten)
                 next_generation = self.check_next_generation(next_generation, colony[i], son)
 
-            time.sleep(0.2/population)
-
         self.monitor(next_generation)
 
         return next_generation
 
     ####################################################################
-    def draw(self, bacteria, i, colony_size):
+    def draw(self):
 
-        if i == 0:
-            if self.food_activated and self.show_terrain:
-                self.screen.blit(self.terrain, (self.xmin, self.ymin))
-            else:
-                self.screen.fill(settings.cBkg)
+        if self.food_activated and self.show_terrain:
+            self.screen.blit(self.terrain, (self.xmin, self.ymin))
+        else:
+            self.screen.fill(settings.cBkg)
+
+        self.group_all.draw(self.screen)
+        pygame.display.flip()
+
+        return
+
+    ####################################################################
+    def check_image(self, bacteria):
 
         if bacteria["Status"] == "alive":
-            if not self.show_icons or self.icon[bacteria["Icon Index"]] is None:
-                pygame.draw.circle(self.screen, bacteria["Color"], bacteria["Position"], int(bacteria["Size"]), 0)
-            else:
-                icon = self.icon[bacteria["Icon Index"]]
-                ix, iy = icon.get_size()
-                if int(bacteria["Size"] * 2) != ix or int(bacteria["Size"] * 2) != iy:
-                    ix, iy = (int(bacteria["Size"] * 2), int(bacteria["Size"] * 2))
-                    icon = pygame.transform.smoothscale(icon, (ix, iy))
-                if bacteria["Rotate"]:
-                    icon = pygame.transform.rotate(icon, random.choice([0, 30, 60, 90, 120, 150, 180, 210, 240, 270]))
-
-                # try:
-                #     prev_rect = (bacteria["Previous Position"][0] - bacteria["Size"], bacteria["Previous Position"][1] - bacteria["Size"], ix, iy)
-                #     # self.screen.blit(bacteria["Previous Pos Img"], prev_rect)
-                # except:
-                #     prev_rect = None
-                # pygame.display.update([prev_rect, rect])
-                rect = (bacteria["Position"][0] - bacteria["Size"], bacteria["Position"][1] - bacteria["Size"], ix, iy)
-                self.screen.blit(icon, rect)
+            bacteria = self.load_sprite(bacteria)
 
             if self.show_values:
                 if self.show_icons:
@@ -727,13 +777,10 @@ class Colony:
                 disputil.DrawText(self.screen, str(bacteria["Size"])+", "+str(bacteria["Age"]),
                                   self.fontObj, pygame.Color("white"), blit=True, x=x, y=y)
 
-        if i == (colony_size - 1):
-            pygame.display.flip()
-
         return
 
     ####################################################################
-    def move(self, bacteria, bacteria_index):
+    def move(self, bacteria):
 
         if bacteria["Next Run"] <= 0:
             direction = random.choice(settings.directions)
@@ -743,11 +790,6 @@ class Colony:
             direction = bacteria["Last Direction"]
             bacteria["Next Run"] -= 1
 
-        # prev_rect = (bacteria["Position"][0] - bacteria["Size"], bacteria["Position"][1] - bacteria["Size"], int(bacteria["Size"] * 2), int(bacteria["Size"] * 2))
-        # if self.show_terrain:
-        #     bacteria["Previous Pos Img"] = disputil.Screenshot(self.terrain, prev_rect)
-        # else:
-        #     bacteria["Previous Pos Img"] = disputil.Screenshot(self.screen, prev_rect)
         x = int((bacteria["Position"][0] + direction[0] * bacteria["Size"] * (bacteria["Speed"] / 10))) % settings.display_size[0]
         y = int((bacteria["Position"][1] + direction[1] * bacteria["Size"] * (bacteria["Speed"] / 10))) % settings.display_size[1]
 
@@ -765,15 +807,10 @@ class Colony:
                     bacteria["Next Run"] = random.randint(1, bacteria["Max Run"])
                     break
 
-        sectorX = int(x // (self.xmax / 8))
-        sectorY = int(x // (self.ymax / 4))
-        sector = ((sectorX - 1) * 4) + sectorY
-        bacteria["Sector"] = sector
-        sector_info = {"Index": bacteria_index}
-        self.sectors[sector].append(sector_info)
-
         bacteria["Previous Position"] = bacteria["Position"]
         bacteria["Position"] = (x, y)
+        bacteria["Sprite"].rect.x = x - bacteria["Size"]
+        bacteria["Sprite"].rect.y = y - bacteria["Size"]
 
         return bacteria
 
@@ -782,6 +819,7 @@ class Colony:
 
         if bacteria["Age"] > bacteria["Longevity"] and bacteria["Reproduction"] != "mitosis":
             bacteria["Status"] = "dead"
+            bacteria["Sprite"].kill()
             if self.logging_verbose:
                 print(bacteria["Name"], "died of old at age", bacteria["Age"])
         else:
@@ -884,6 +922,7 @@ class Colony:
                     ((bacteria1["Hunt Randomize"] and random.randint(1, bacteria1["Hunt Success"]) != 1) or
                         not bacteria1["Hunt Randomize"]):
                 bacteria2["Status"] = "dead"
+                bacteria2["Sprite"].kill()
                 size = bacteria1["Size"]
                 if bacteria1["Overgrowth"]:
                     bacteria1["Size"] = min(bacteria1["Size"] + bacteria2["Size"],
@@ -938,6 +977,7 @@ class Colony:
                 if bacteria["Last Dinner"] <= 0:
                     if bacteria["Size"] < bacteria["Starvation Size Limit"]:
                         bacteria["Status"] = "dead"
+                        bacteria["Sprite"].kill()
                         if self.logging_verbose:
                             print(bacteria["Name"], "died by starvation at age:", bacteria["Age"], "Size:", bacteria["Size"],
                               "Last dinner:", bacteria["Last Dinner"], "Starvation Limit:", bacteria["Starvation Limit"],
@@ -963,9 +1003,13 @@ class Colony:
     def check_next_generation(self, colony, bacteria, son):
 
         if bacteria["Status"] == "alive":
+            bacteria["Sprite"].set_index(len(colony) + 1)
             colony.append(bacteria)
+        else:
+            bacteria["Sprite"].kill()
 
         if son is not None:
+            son["Sprite"].set_index(len(colony) + 1)
             colony.append(son)
 
         if self.logging:
@@ -1071,6 +1115,7 @@ class Colony:
                     if x <= colony[i]["Position"][0] <= (x + settings.cataclism_icon_scale*0.8) and \
                             y <= colony[i]["Position"][1] <= (y + settings.cataclism_icon_scale*0.8):
                         colony[i]["Status"] = "dead"
+                        colony[i]["Sprite"].kill()
                         casualties += 1
                 time.sleep(1)
                 print("FATAL CATASTROPHE!!!! caused %s casualties. To be or not to be..." % casualties)
@@ -1078,6 +1123,7 @@ class Colony:
             elif event["Key"] == pygame.K_d:
                 for i in range(0, len(colony)):
                     colony[i]["Status"] = "dead"
+                    colony[i]["Sprite"].kill()
                 print("ALL COLONY KILLED!!!! caused %s casualties. Deliver us from evil..." % len(colony))
 
             elif event["Key"] == pygame.K_r:
