@@ -97,6 +97,19 @@ def InitDisplay(x=None, y=None, windowed=False, hideMouse=True, clearScreen=Fals
         screen.fill((0, 0, 0))
         pygame.display.update()
 
+    """ TRANSPARENT BACKGROUND? This will simulate it:
+    import ImageGrab, Image 
+
+    im = Imagegrab.grab()
+    im.save('fake_trans.png','png')
+
+    for_trans = pygame.image.load('fake_trans.png').convert()
+
+    splash = pygame.image.load.... 
+
+    screen.blit(for_trans, (0,0))
+    """
+
     return screen, size[0], size[1], str(sys.version_info[0])+"."+str(sys.version_info[1]), archOS
 
 
@@ -394,7 +407,7 @@ def getSunSign():
 
     mdd = int(time.strftime("%m%d"))
 
-    for i in range(0, len(ZD)):
+    for i in range(len(ZD)):
         if mdd <= ZD[i]:
             sunsign = ZN[i]
             break
