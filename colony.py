@@ -537,19 +537,18 @@ class Colony:
         scale = 100.0
         octaves = 6
         persistence = 0.5
-        lacunarity = 2.0
+        lacunarity = 3.0
         base = random.randint(1, 5)
 
         world1 = numpy.zeros((width, height))
         world = [["" for y in range(height)] for x in range(width)]
 
         bound = [-1.0]
-        if prob is None:
-            for i in range(1, len(composition)):
-                bound.append(bound[i - 1] + 2 / len(composition))
-        else:
-            for i in range(1, len(composition)):
-                bound.append(bound[i - 1] + (2 * prob[i - 1] / 100))
+        for i in range(len(composition)):
+            if prob is None:
+                bound.append(bound[i] + 2 / len(composition))
+            else:
+                bound.append(bound[i] + (2 * prob[i] / 100))
         bound.append(1.0)
 
         for i in range(width):
@@ -578,21 +577,21 @@ class Colony:
 
             terrain_eaten = self.terrain_eaten[self.colony_age % self.food_growth_gap]
 
-            for l in range(len(terrain_eaten)):
+            for i in range(len(terrain_eaten)):
 
-                x, y = terrain_eaten[l]
+                x, y = terrain_eaten[i]
 
                 if self.terrain_type[x][y] != self.terrain_type_original[x][y]:
-                    for k in range(len(self.terrain_evolution)):
-                        if self.terrain_type_original[x][y] == self.terrain_evolution[k][0] and \
-                                self.terrain_type[x][y] == self.terrain_evolution[k][1]:
+                    for j in range(len(self.terrain_evolution)):
+                        if self.terrain_type_original[x][y] == self.terrain_evolution[j][0] and \
+                                self.terrain_type[x][y] == self.terrain_evolution[j][1]:
                             self.terrain_type[x][y] = self.terrain_type_original[x][y]
+                            if self.show_terrain:
+                                for k in range(len(settings.terrain_colors)):
+                                    if self.terrain_type[x][y] == settings.terrain_colors[k][0]:
+                                        self.terrain.set_at((x, y), settings.terrain_colors[k][1])
+                                        break
                             break
-
-                    if self.show_terrain:
-                        for k in range(len(settings.terrain_colors)):
-                            if self.terrain_type[x][y] == settings.terrain_colors[k][0]:
-                                self.terrain.set_at((x, y), settings.terrain_colors[k][1])
 
             self.terrain_eaten[self.colony_age % self.food_growth_gap] = []
 
@@ -687,24 +686,24 @@ class Colony:
                     eaten, bacteria1, foo = self.check_feed(bacteria1)
 
                 if bacteria1["Category"] in ("predator", "both") or bacteria1["Reproduction"] == "sex":
-
                     hit_list = self.check_collision(bacteria1["Sprite"], self.group_all)
 
                     for bacteria in hit_list:
-
                         j = bacteria.get_index() - 1
-                        bacteria2 = self.colony[j]
 
-                        if 0 <= j < population and bacteria2["Status"] == "alive":
+                        if 0 <= j < population:
+                            bacteria2 = self.colony[j]
 
-                            if bacteria1["Reproduction"] == "sex":
-                                son, bacteria1, bacteria2 = self.check_reproduction(bacteria1, bacteria2)
+                            if bacteria2["Status"] == "alive":
 
-                            if son is None and bacteria1["Category"] in ("predator", "both"):
-                                mark_eaten, bacteria1, bacteria2 = self.check_feed(bacteria1, bacteria2)
-                                if mark_eaten: eaten = True
+                                if bacteria1["Reproduction"] == "sex":
+                                    son, bacteria1, bacteria2 = self.check_reproduction(bacteria1, bacteria2)
 
-                            self.colony[j] = bacteria2
+                                if son is None and bacteria1["Category"] in ("predator", "both"):
+                                    mark_eaten, bacteria1, bacteria2 = self.check_feed(bacteria1, bacteria2)
+                                    if mark_eaten: eaten = True
+
+                                self.colony[j] = bacteria2
 
                 bacteria1 = self.check_starvation(bacteria1, eaten)
                 bacteria1 = self.check_growth(bacteria1, eaten)
@@ -713,7 +712,6 @@ class Colony:
             self.colony[i] = bacteria1
 
         self.monitor(next_generation)
-
         self.colony = next_generation
 
         return population
@@ -765,12 +763,11 @@ class Colony:
 
             else:
                 img = pygame.Surface((bacteria["Size"] * 2, bacteria["Size"] * 2))
-                pygame.draw.circle(img, bacteria["Color"], (bacteria["Size"], bacteria["Size"]),
-                                   int(bacteria["Size"]), 0)
+                pygame.draw.circle(img, bacteria["Color"], (bacteria["Size"], bacteria["Size"]), bacteria["Size"], 0)
 
             bacteria_sprite = Bacteria(img)
             bacteria_sprite.rect.x = bacteria["Position"][0]
-            bacteria_sprite.rect.y = bacteria["Position"][0]
+            bacteria_sprite.rect.y = bacteria["Position"][1]
             bacteria_sprite.radius = bacteria["Size"]/2
             self.group_all.add(bacteria_sprite)
 
@@ -929,17 +926,16 @@ class Colony:
                     if math.sqrt((bacteria1["Position"][0] - x) ** 2 + (bacteria1["Position"][1] - y) ** 2) <= bacteria1["Size"]*gap:
                         if self.terrain_type[x][y] == bacteria1["Food"][:1]:
                             for k in range(len(self.terrain_evolution)):
-                                if self.terrain_type[x][y] == self.terrain_evolution[k][0] or \
-                                        bacteria1["Food"][:1] == self.terrain_evolution[k][0]:
+                                if bacteria1["Food"][:1] == self.terrain_evolution[k][0]:
                                     self.terrain_type[x][y] = self.terrain_evolution[k][1]
+                                    if self.show_terrain:
+                                        for k in range(len(settings.terrain_colors)):
+                                            if self.terrain_type[x][y] == settings.terrain_colors[k][0]:
+                                                self.terrain.set_at((x, y), settings.terrain_colors[k][1])
+                                                break
                                     break
                             self.terrain_eaten[self.colony_age % self.food_growth_gap].append([x, y])
                             eaten = True
-
-                        if self.show_terrain:
-                            for k in range(len(settings.terrain_colors)):
-                                if self.terrain_type[x][y] == settings.terrain_colors[k][0]:
-                                    self.terrain.set_at((x, y), settings.terrain_colors[k][1])
 
         return eaten, bacteria1, bacteria2
 

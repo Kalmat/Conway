@@ -313,6 +313,13 @@ Food Growth: 75
 All Preys - mitosis / Starvation 5
 Predator - hermaphrodite / Starvation 5 / Gestation Gap 50
 
+### BALANCED
+Food Growth: 75
+Procedural Map: True
+Fauna: 0,0,0,0,0,0,0,0,0,3
+One Prey - mitosis / Starvation 5
+Predator - hermaphrodite / Starvation 5 / Hunt Randomize 3
+
 """
 
 """ MITOSIS SCENARIOS:

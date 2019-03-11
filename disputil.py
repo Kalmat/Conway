@@ -105,7 +105,7 @@ def InitDisplay(x=None, y=None, windowed=False, hideMouse=True, clearScreen=Fals
 
     for_trans = pygame.image.load('fake_trans.png').convert()
 
-    splash = pygame.image.load.... 
+    splash = pygame.image.load(('fake_trans.png','png')
 
     screen.blit(for_trans, (0,0))
     """
@@ -146,7 +146,8 @@ def loadIcon(code, folder, extension=".png"):
     icon = None
 
     try:
-        icon = pygame.image.load(folder + str(code) + extension).convert_alpha()
+        # Use .convert_alpha() if you find troubles with transparency
+        icon = pygame.image.load(folder + str(code) + extension)
     except:
         print("Error loading icon. Loading default icon instead. Code:", folder + code)
         print(traceback.format_exc())
@@ -163,7 +164,8 @@ def loadURLImage(url, headers='', timeout=10):
         with requests.get(url, headers=headers, timeout=timeout) as pic:
             image_str = pic.content
             image_file = io.BytesIO(image_str)
-            image = pygame.image.load(image_file).convert_alpha()
+            # Use .convert_alpha() if you find troubles with transparency
+            image = pygame.image.load(image_file)
     except:
         print("Error getting image from URL", url)
         print(traceback.format_exc())
