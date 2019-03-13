@@ -766,8 +766,8 @@ class Colony:
                 pygame.draw.circle(img, bacteria["Color"], (bacteria["Size"], bacteria["Size"]), bacteria["Size"], 0)
 
             bacteria_sprite = Bacteria(img)
-            bacteria_sprite.rect.x = bacteria["Position"][0]
-            bacteria_sprite.rect.y = bacteria["Position"][1]
+            bacteria_sprite.rect.x = bacteria["Position"][0] - bacteria["Size"]
+            bacteria_sprite.rect.y = bacteria["Position"][1] - bacteria["Size"]
             bacteria_sprite.radius = bacteria["Size"]/2
             self.group_all.add(bacteria_sprite)
 
@@ -784,8 +784,8 @@ class Colony:
             direction = bacteria["Last Direction"]
             bacteria["Next Run"] -= 1
 
-        x = int((bacteria["Position"][0] + direction[0] * bacteria["Size"] * (bacteria["Speed"] / 10))) % settings.display_size[0]
-        y = int((bacteria["Position"][1] + direction[1] * bacteria["Size"] * (bacteria["Speed"] / 10))) % settings.display_size[1]
+        x = int((bacteria["Position"][0] + direction[0] * bacteria["Size"] * (bacteria["Speed"] / 10))) % self.xmax
+        y = int((bacteria["Position"][1] + direction[1] * bacteria["Size"] * (bacteria["Speed"] / 10))) % self.ymax
 
         if self.food_activated and bacteria["Category"] == "prey" and \
                 bacteria["Food"][:1] != self.terrain_type[x][y]:
