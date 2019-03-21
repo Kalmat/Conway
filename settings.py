@@ -28,6 +28,9 @@ fauna = [
      "Category": "prey",
      "Gender": "both",
      "Reproduction": "mitosis",
+     "Larva": False,
+     "Larva Category": "prey",
+     "Larva Speed": 5,
      "Food": "organic",
      "Last Dinner": 0,
      "Starvation Limit": 5,
@@ -66,8 +69,12 @@ fauna = [
      "Size": 1,
      "Size Gap": "addition",
      "Last Move": 0,
+     "Sprite": None,
      "Icon File": "Virus1",
      "Rotate": False,
+     "Larva Icon File": None,
+     "Larva Rotate": False,
+     "Fauna Index": 0,
      "Icon Index": 0
      },
 
@@ -75,6 +82,9 @@ fauna = [
      "Category": "prey",
      "Gender": "both",
      "Reproduction": "mitosis",
+     "Larva": False,
+     "Larva Category": "prey",
+     "Larva Speed": 5,
      "Food": "organic",
      "Last Dinner": 0,
      "Starvation Limit": 5,
@@ -113,8 +123,12 @@ fauna = [
      "Size": 1,
      "Size Gap": "addition",
      "Last Move": 0,
+     "Sprite": None,
      "Icon File": "Virus2",
      "Rotate": True,
+     "Larva Icon File": None,
+     "Larva Rotate": False,
+     "Fauna Index": 1,
      "Icon Index": 1
      },
 
@@ -122,6 +136,9 @@ fauna = [
      "Category": "prey",
      "Gender": "both",
      "Reproduction": "mitosis",
+     "Larva": False,
+     "Larva Category": "prey",
+     "Larva Speed": 5,
      "Food": "organic",
      "Last Dinner": 0,
      "Starvation Limit": 5,
@@ -160,16 +177,23 @@ fauna = [
      "Size": 1,
      "Size Gap": "addition",
      "Last Move": 0,
+     "Sprite": None,
      "Icon File": "Virus3",
      "Rotate": False,
-     "Icon Index": 3
+     "Larva Icon File": None,
+     "Larva Rotate": False,
+     "Fauna Index": 2,
+     "Icon Index": 2
      },
 
     {"Name": "Purple Virus",
      "Category": "both",
      "Gender": "both",
      "Reproduction": "hermaphrodite",
-     "Food": "prey",
+     "Larva": True,
+     "Larva Category": "prey",
+     "Larva Speed": 5,
+     "Food": "organic",
      "Last Dinner": 0,
      "Starvation Limit": 5,
      "Starvation Init Ratio": 0.2,
@@ -206,8 +230,12 @@ fauna = [
      "Size": 1,
      "Size Gap": "addition",
      "Last Move": 0,
+     "Sprite": None,
      "Icon File": "Virus4",
      "Rotate": False,
+     "Larva Icon File": "Larva",
+     "Larva Rotate": True,
+     "Fauna Index": 3,
      "Icon Index": 3
      }]
 
@@ -241,6 +269,9 @@ bacteria_options_icon_size = 128
 bacteria_options_icon_scale = int(display_size[0]*bacteria_options_icon_size/1280)
 frame_check_size = 32
 frame_check_scale = int(display_size[0]*frame_check_size/1280)
+death_icon = "Death"
+death_icon_size = 32
+death_icon_scale = int(display_size[0]*death_icon_size/1280)
 cataclism_icon = "Lightning"
 cataclism_icon_size = 256
 cataclism_icon_scale = int(display_size[0]*cataclism_icon_size/1280)
