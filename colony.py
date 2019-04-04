@@ -10,16 +10,17 @@ import noise
 import copy
 import importlib
 import settings
+# import sys
+# sys.path.insert(0, r'../modules/')
 import disputil
+import matplotlib.path
 
-from shapely.geometry import Point
-from shapely.geometry.polygon import Polygon
 
 ###############################################################################
 class Bacteria(pygame.sprite.Sprite):
 
     def __init__(self, image, set_color=False):
-        super().__init__()
+        pygame.sprite.Sprite.__init__(self)
         self.image = image
         self.set_color = set_color
         if self.set_color:
@@ -27,7 +28,6 @@ class Bacteria(pygame.sprite.Sprite):
         self.rect = self.image.get_rect()
         self.radius = self.rect.width / 4
         self.index = 0
-        self.angle = None
 
     def set_index(self, index):
         self.index = index
@@ -39,15 +39,12 @@ class Bacteria(pygame.sprite.Sprite):
         self.image = pygame.transform.smoothscale(image, size)
         if self.set_color:
             self.image.set_colorkey(settings.cBkg)
-        if self.angle is not None:
-            self.rotate()
         self.rect.width, self.rect.height = size
         self.radius = self.rect.width / 4
 
-    def rotate(self):
+    def rotate(self, angle):
         orig_rect = self.image.get_rect()
-        self.angle = random.choice(numpy.arange(0.0, 360.0, 15.0))
-        rot_image = pygame.transform.rotate(self.image, self.angle)
+        rot_image = pygame.transform.rotate(self.image, angle)
         rot_rect = orig_rect.copy()
         rot_rect.center = rot_image.get_rect().center
         self.image = rot_image.subsurface(rot_rect).copy()
@@ -57,10 +54,16 @@ class Bacteria(pygame.sprite.Sprite):
     def death(self, screen, img):
         self.image = img
         rect = self.image.get_rect()
-        self.rect.x = self.rect.x - rect.width/2
-        self.rect.y = self.rect.y - rect.height/2
+        self.rect.x -= rect.width/2
+        self.rect.y -= rect.height/2
         self.rect.width = rect.width
         self.rect.height = rect.height
+        single_group = pygame.sprite.GroupSingle()
+        single_group.add(self)
+        single_group.draw(screen)
+        pygame.display.update(self.rect)
+
+    def draw(self, screen):
         single_group = pygame.sprite.GroupSingle()
         single_group.add(self)
         single_group.draw(screen)
@@ -90,10 +93,11 @@ class Colony:
         self.name_fontObj = disputil.LoadFont(settings.fonts_folder+settings.name_font, settings.name_font_size, 0)
         self.info_fontObj = disputil.LoadFont(settings.fonts_folder+settings.info_font, settings.info_font_size, 0)
 
-        self.fauna = settings.fauna
+        self.fauna = copy.deepcopy(settings.fauna)
         self.init_bacteria_number = settings.init_bacteria_number
         self.show_icons = settings.show_icons
-        self.show_values = settings.show_values
+        self.play_music = settings.play_music
+        self.playing_music = settings.play_music
         self.food_activated = settings.food_activated
         self.food_growth_gap = settings.food_growth_gap
         self.show_terrain = settings.show_terrain
@@ -123,6 +127,7 @@ class Colony:
         self.keyP = ""
         self.predators = 0
         self.preys = 0
+        self.angles = numpy.arange(0.0, 360.0, 15.0)
 
         self.img_death = disputil.loadIcon(settings.death_icon, settings.icons_folder)
         self.img_death = pygame.transform.smoothscale(self.img_death, (settings.death_icon_scale, settings.death_icon_scale))
@@ -131,14 +136,13 @@ class Colony:
     ####################################################################
     def intro(self):
 
-        if not self.first_run:
-            pygame.display.quit()
-            self.__init__()
+        if self.play_music:
+            self.playing_music = disputil.play_music(settings.song_intro, loops=-1)
 
         self.screen.fill(settings.cBkg)
         pygame.draw.rect(self.screen, settings.cBkg_highlighted, (self.xmax*0.1, self.ymax*0.1, self.xmax*0.8, self.ymax*0.8))
 
-        for i in range(4):
+        for i in range(len(self.icon)):
             icon = disputil.loadIcon("Virus"+str(i+1)+"_Intro", settings.icons_folder)
             icon = pygame.transform.smoothscale(icon, (settings.intro_icons_scale, settings.intro_icons_scale))
             x = self.xmax * settings.intro_icon_pos[i][0] - int(self.xmax * settings.intro_icon_gap[i][0] / 1280)
@@ -156,15 +160,15 @@ class Colony:
 
         pygame.display.flip()
 
-        tx, ty = disputil.DrawText(self.screen, settings.title, self.title_fontObj, settings.title_color, blit=False)
         if self.first_run:
-            disputil.DrawText(self.screen, settings.title, self.title_fontObj, settings.title_color,
-                              blit=True, x=self.xmax/2 - tx/2, y=self.ymax/2 - ty/2,
-                              outline="FadeIn", ocolor=settings.cBkg_highlighted)
+            outline = "FadeIn"
             self.first_run = False
         else:
-            disputil.DrawText(self.screen, settings.title, self.title_fontObj, settings.title_color,
-                              blit=True, x=self.xmax/2 - tx/2, y=self.ymax/2 - ty/2)
+            outline = None
+        tx, ty = disputil.DrawText(self.screen, settings.title, self.title_fontObj, settings.title_color, blit=False)
+        disputil.DrawText(self.screen, settings.title, self.title_fontObj, settings.title_color,
+                          blit=True, x=self.xmax/2 - tx/2, y=self.ymax/2 - ty/2,
+                          outline=outline, ocolor=settings.cBkg_highlighted)
         rect = [(self.xmax/2 - tx/2, self.ymax/2 - ty/2,  tx, ty)]
 
         icon = disputil.loadIcon(settings.intro_icon, settings.icons_folder)
@@ -361,16 +365,20 @@ class Colony:
         disputil.DrawText(self.screen, settings.options, self.title_fontObj, settings.options_title_color, blit=True,
                           x=self.xmax / 2 - tx / 2, y=self.ygap)
 
-        text = ["Initial Specimen Number", "Show Icons", "Show Values", "Food Mode Activated", "Food Growth Ratio", "Show Terrain", "Procedural Map", "Logging", "Verbose", "Colony Fauna (Advanced)", "Terrain Composition (Advanced)"]
+        text = ["Initial Specimen Number", "Show Icons", "Play Music", "Food Mode Activated", "Food Growth Ratio", "Show Terrain", "Procedural Map", "Logging", "Verbose", "Colony Fauna (Advanced)", "Terrain Composition (Advanced)"]
         tip = [None, None, None, None, settings.food_growth_tip, None, None, None, None, settings.colony_diversity_tip, None]
-        value = [self.init_bacteria_number, self.show_icons, self.show_values, self.food_activated, self.food_growth_gap, self.show_terrain, self.procedural_terrain, self.logging, self.logging_verbose, settings.colony_diversity, settings.terrain_composition_tip]
+        value = [self.init_bacteria_number, self.show_icons, self.play_music, self.food_activated, self.food_growth_gap, self.show_terrain, self.procedural_terrain, self.logging, self.logging_verbose, settings.colony_diversity, settings.terrain_composition_tip]
         rect = (self.xgap * 10, ty + self.ygap*0.5, self.xmax*0.8, self.ymax*0.8)
 
         value = self.get_options(text, tip, value, rect, self.ygap*0.45)
 
         self.init_bacteria_number = int(value[0])
         self.show_icons = value[1]
-        self.show_values = value[2]
+        self.play_music = value[2]
+        if self.play_music:
+            self.playing_music = disputil.play_music(settings.song_intro, loops=-1)
+        else:
+            self.playing_music = disputil.play_music(None)
         self.food_activated = value[3]
         self.food_growth_gap = int(value[4])
         self.terrain_eaten = [[] for x in range(self.food_growth_gap)]
@@ -549,6 +557,9 @@ class Colony:
     ####################################################################
     def create_terrain(self):
 
+        if self.play_music:
+            self.playing_music = disputil.play_music(settings.song, loops=-1)
+
         if self.food_activated:
 
             if self.procedural_terrain:
@@ -681,15 +692,9 @@ class Colony:
         bacteria["Speed"] = min(20, bacteria_settings["Speed"])
         if bacteria["Larva"]:
             bacteria["Larva Status"] = True
-            real = bacteria["Category"]
-            bacteria["Category"] = bacteria["Larva Category"]
-            bacteria["Larva Category"] = real
-            real = bacteria["Speed"]
-            bacteria["Speed"] = bacteria["Larva Speed"]
-            bacteria["Larva Speed"] = real
-            real = bacteria["Rotate"]
-            bacteria["Rotate"] = bacteria["Larva Rotate"]
-            bacteria["Larva Rotate"] = real
+            bacteria["Category"], bacteria["Larva Category"] = bacteria["Larva Category"], bacteria["Category"]
+            bacteria["Speed"], bacteria["Larva Speed"] = bacteria["Larva Speed"], bacteria["Speed"]
+            bacteria["Rotate"], bacteria["Larva Rotate"] = bacteria["Larva Rotate"], bacteria["Rotate"]
         else:
             bacteria["Larva Status"] = False
         bacteria["Next Run"] = random.randint(1, bacteria["Max Run"])
@@ -701,6 +706,8 @@ class Colony:
             bacteria["Maturity Size"] = max(bacteria["Maturity Size"], bacteria["Max Size"])
         bacteria["Growth Gap"] = max(int(bacteria["Maturity Init Point"] / bacteria["Maturity Size"]), 1)
         bacteria["Starvation Init Point"] = int(bacteria["Longevity"] * bacteria["Starvation Init Ratio"])
+        if bacteria["Larva"]:
+            bacteria["Starvation Init Point"] = int(bacteria["Starvation Init Point"]/2)
         bacteria["Starvation Size Limit"] = int(max(bacteria["Maturity Size"] * bacteria["Starvation Size Ratio"], bacteria["Max Size"] * bacteria["Starvation Size Ratio"]))
         bacteria["Last Dinner"] = bacteria["Starvation Limit"]
         if bacteria["Hunt Success"] < 1:
@@ -721,9 +728,6 @@ class Colony:
         self.predators = 0
         self.preys = 0
         population = len(self.colony)
-
-        clock = pygame.time.Clock()
-        clock.tick(population * 12 / self.init_bacteria_number)
 
         self.draw_all()
 
@@ -762,13 +766,9 @@ class Colony:
                                     mark_eaten, bacteria1, bacteria2 = self.check_feed(bacteria1, bacteria2)
                                     if mark_eaten: eaten = True
 
-                                self.colony[j] = bacteria2
-
                 bacteria1 = self.check_starvation(bacteria1, eaten)
                 bacteria1 = self.check_growth(bacteria1, eaten)
                 next_generation = self.check_next_generation(next_generation, bacteria1, son)
-
-            self.colony[i] = bacteria1
 
         self.monitor(next_generation)
         self.colony = next_generation
@@ -783,7 +783,8 @@ class Colony:
         else:
             self.screen.fill(settings.cBkg)
 
-        self.group_all.draw(self.screen)
+        if not settings.draw_independently:
+            self.group_all.draw(self.screen)
         pygame.display.flip()
 
         return
@@ -796,7 +797,8 @@ class Colony:
                 print(bacteria["Name"], "died of old at age", bacteria["Age"])
             bacteria["Status"] = "dead"
             self.group_all.remove(bacteria["Sprite"])
-            bacteria["Sprite"].death(self.screen, self.img_death)
+            if settings.death_show:
+                bacteria["Sprite"].death(self.screen, self.img_death)
         else:
             bacteria["Age"] += 1
 
@@ -831,12 +833,10 @@ class Colony:
             bacteria_sprite.resize(img, (ix, iy))
 
         if bacteria["Rotate"] and bacteria["Next Run"] == 0:
-            bacteria_sprite.rotate()
+            bacteria_sprite.rotate(random.choice(self.angles))
 
-        # single_group = pygame.sprite.GroupSingle()
-        # single_group.add(bacteria_sprite)
-        # single_group.draw(self.screen)
-        # pygame.display.update(bacteria_sprite.rect)
+        if settings.draw_independently:
+            bacteria_sprite.draw(self.screen)
 
         return bacteria_sprite
 
@@ -857,7 +857,7 @@ class Colony:
         if self.food_activated and bacteria["Category"] == "prey" and \
                 bacteria["Food"][:1] != self.terrain_type[x][y]:
             directions = copy.deepcopy(settings.directions)
-            random.shuffle(directions)
+            random.shuffle(settings.directions)
             for i, direc in enumerate(directions):
                 a = int((bacteria["Position"][0] + direc[0] * bacteria["Size"] * (bacteria["Speed"] / 10))) % settings.display_size[0]
                 b = int((bacteria["Position"][1] + direc[1] * bacteria["Size"] * (bacteria["Speed"] / 10))) % settings.display_size[1]
@@ -890,7 +890,8 @@ class Colony:
                     bacteria1["Last Gestation"] >= bacteria1["Gestation Gap"] and \
                     bacteria1["Size"] >= bacteria1["Gestation Size Limit"]:
                 bacteria1["Size"] = int(bacteria1["Size"]/2)
-                son = self.birth(settings.fauna[bacteria1["Fauna Index"]], bacteria1["Icon Index"], bacteria1["Position"], bacteria1["Size"])
+                son = self.birth(settings.fauna[bacteria1["Fauna Index"]], bacteria1["Icon Index"],
+                                 bacteria1["Position"], bacteria1["Size"])
                 last = bacteria1["Last Gestation"]
                 bacteria1["Last Gestation"] = 0
                 if self.logging_verbose:
@@ -984,6 +985,25 @@ class Colony:
                           bacteria2["Name"], "Age:", bacteria2["Age"], "Size:", bacteria2["Size"])
 
         elif self.food_activated:
+            if settings.polygon_feed:
+                path, width, height, init_x, init_y = self.set_polygon(bacteria1)
+                for i in range(max(2, int(width))):
+                    x = (int(init_x) + i) % self.xmax
+                    for j in range(max(2, int(height))):
+                        y = (int(init_y) + j) % self.ymax
+                        if path.contains_point((x, y)):
+                            if self.terrain_type[x][y] == bacteria1["Food"][:1]:
+                                for k, evol in enumerate(self.terrain_evolution):
+                                    if bacteria1["Food"][:1] == evol[0]:
+                                        self.terrain_type[x][y] = evol[1]
+                                        if self.show_terrain:
+                                            for l, col in enumerate(settings.terrain_colors):
+                                                if self.terrain_type[x][y] == col[0]:
+                                                    self.terrain.set_at((x, y), col[1])
+                                                    break
+                                        break
+                                self.terrain_eaten[self.colony_age % self.food_growth_gap].append([x, y])
+                                eaten = True
             gap = 0.7
             for i in range(int(bacteria1["Size"]*gap*2)):
                 x = (bacteria1["Position"][0] - int(bacteria1["Size"]*gap) + i) % self.xmax
@@ -991,7 +1011,7 @@ class Colony:
                     y = (bacteria1["Position"][1] - int(bacteria1["Size"]*gap) + j) % self.ymax
                     if math.sqrt((bacteria1["Position"][0] - x) ** 2 + (bacteria1["Position"][1] - y) ** 2) <= bacteria1["Size"]*gap:
                         if self.terrain_type[x][y] == bacteria1["Food"][:1]:
-                            for k,evol in enumerate(self.terrain_evolution):
+                            for k, evol in enumerate(self.terrain_evolution):
                                 if bacteria1["Food"][:1] == evol[0]:
                                     self.terrain_type[x][y] = evol[1]
                                     if self.show_terrain:
@@ -1006,6 +1026,76 @@ class Colony:
         return eaten, bacteria1, bacteria2
 
     ####################################################################
+    def set_polygon(self, bacteria):
+
+        size = bacteria["Size"]
+
+        Xpos = bacteria["Position"][0]
+        Ypos = bacteria["Position"][1]
+        Xppos = bacteria["Previous Position"][0]
+        Yppos = bacteria["Previous Position"][1]
+
+        if Xpos > self.xmax*0.8 and Xppos < self.xmax*0.2:
+            Xpos = self.xmin
+        if Xpos < self.xmax*0.2 and Xppos > self.xmax*0.8:
+            Xpos = self.xmax
+        if Ypos > self.ymax * 0.8 and Yppos < self.ymax * 0.2:
+            Ypos = self.ymin
+        if Ypos < self.ymax * 0.2 and Yppos > self.ymax * 0.8:
+            Ypos = self.ymax
+
+        if Xpos == Xppos:
+            init_x = max(self.xmin, Xpos - size/1.5)
+            end_x = min(self.xmax, Xpos + size/1.5)
+            if Ypos < Yppos:
+                Ypos, Yppos = Yppos, Ypos
+            init_yb = min(self.xmax, Ypos + size)
+            init_yt = max(self.xmin, Yppos - size)
+            end_yb = min(self.xmax, Ypos + size)
+            end_yt = max(self.xmin, Yppos - size)
+        else:
+            if Xpos > Xppos:
+                Xpos, Xppos = Xppos, Xpos
+                Ypos, Yppos = Yppos, Ypos
+            init_x = Xpos
+            end_x = Xppos
+            init_yb = min(self.ymax, Ypos + size)
+            init_yt = max(self.ymin, Ypos - size)
+            end_yb = min(self.ymax, Yppos + size)
+            end_yt = max(self.ymin, Yppos - size)
+
+        left_bottom = (init_x, init_yb)
+        left_top = (init_x, init_yt)
+        right_top = (end_x, end_yt)
+        right_bottom = (end_x, end_yb)
+
+        width = (end_x - init_x) * 1.4
+        height = (max(init_yb, end_yb) - min(init_yt, end_yt)) * 1.4
+
+        x = init_x
+        y = min(init_yt, end_yt)
+
+        verts = [
+                 left_bottom,
+                 left_top,
+                 right_top,
+                 right_bottom,
+                 (0, 0),
+                ]
+
+        codes = [
+                 matplotlib.path.Path.MOVETO,
+                 matplotlib.path.Path.LINETO,
+                 matplotlib.path.Path.LINETO,
+                 matplotlib.path.Path.LINETO,
+                 matplotlib.path.Path.CLOSEPOLY,
+                 ]
+
+        path = matplotlib.path.Path(verts, codes)
+
+        return path, width, height, x, y
+
+    ####################################################################
     def check_starvation(self, bacteria, eaten):
 
         if self.food_activated:
@@ -1018,7 +1108,8 @@ class Colony:
                     if bacteria["Size"] < bacteria["Starvation Size Limit"]:
                         bacteria["Status"] = "dead"
                         self.group_all.remove(bacteria["Sprite"])
-                        bacteria["Sprite"].death(self.screen, self.img_death)
+                        if settings.death_show:
+                            bacteria["Sprite"].death(self.screen, self.img_death)
                         if self.logging_verbose:
                             print(bacteria["Name"], "died by starvation at age:", bacteria["Age"], "Size:", bacteria["Size"],
                               "Last dinner:", bacteria["Last Dinner"], "Starvation Limit:", bacteria["Starvation Limit"],
@@ -1100,7 +1191,7 @@ class Colony:
 
         y = self.ygap * 3
         text = ["Initial Specimen Number: ", "Show Icons: ", "Show Values: ", "Food Activated: ", "Food Growth Gap: ", "Show Terrain: "]
-        value = [str(self.init_bacteria_number), str(self.show_icons), str(self.show_values), str(self.food_activated), str(self.food_growth_gap), str(self.show_terrain)]
+        value = [str(self.init_bacteria_number), str(self.show_icons), str(self.play_music), str(self.food_activated), str(self.food_growth_gap), str(self.show_terrain)]
         for i in range (len(text)):
             tx, ty = disputil.DrawText(self.screen, text[i] + value[i], self.presskey_fontObj, pygame.Color("white"),
                                       blit=True, x=self.xmax/2, y=y)
@@ -1145,6 +1236,15 @@ class Colony:
 
             if event["Key"] == pygame.K_t:
                 self.show_terrain = not self.show_terrain
+                if self.show_terrain:
+                    self.create_terrain()
+
+            elif event["Key"] == pygame.K_m:
+                self.play_music = not self.play_music
+                if self.playing_music:
+                    self.playing_music = disputil.play_music(None)
+                else:
+                    self.playing_music = disputil.play_music(settings.song, loops=-1)
 
             elif event["Key"] == pygame.K_l:
                 self.logging = not self.logging
@@ -1214,3 +1314,5 @@ while True:
         else:
             myColony.this_is_the_end_my_many_friends()
             break
+
+        pygame.time.Clock().tick(settings.fps)

@@ -9,6 +9,7 @@ import requests
 import pygame
 import time
 import traceback
+from unicodedata import normalize
 
 
 ####################################################################
@@ -97,7 +98,7 @@ def InitDisplay(x=None, y=None, windowed=False, hideMouse=True, clearScreen=Fals
         screen.fill((0, 0, 0))
         pygame.display.update()
 
-    """ TRANSPARENT BACKGROUND? This will simulate it:
+    """ TRANSPARENT BACKGROUND? This will simulate it (only in fullscreen mode):
     import ImageGrab, Image 
 
     im = Imagegrab.grab()
@@ -111,6 +112,29 @@ def InitDisplay(x=None, y=None, windowed=False, hideMouse=True, clearScreen=Fals
     """
 
     return screen, size[0], size[1], str(sys.version_info[0])+"."+str(sys.version_info[1]), archOS
+
+
+####################################################################
+def play_music(song, loops=0):
+
+    if pygame.mixer.get_init():
+        # Stop previous playback before playing anything else
+        pygame.mixer.music.stop()
+    else:
+        # Initialize music player (if not yet initialized)
+        pygame.mixer.init()
+    playing = False
+    # Use song=None to stop previous playback and not continue playing anything
+    if song is not None:
+        # Load song
+        pygame.mixer.music.load(song)
+        # Play music (loops represents value+1 times to be played. Set to -1 for infinite loop)
+        pygame.mixer.music.play(loops=loops)
+        playing = True
+    else:
+        pygame.mixer.quit()
+
+    return playing
 
 
 ####################################################################
@@ -325,6 +349,48 @@ def WrapText(text, font, width):
 
 
 ####################################################################
+# Based on the work from Gunny26
+# < https://github.com/gunny26/pygame/blob/master/ScrollText.py >
+# Thanks, man for your work and, specially, for sharing!!!
+class ScrollText(object):
+    """Simple 2d Scrolling Text"""
+
+    def __init__(self, surface, text, hpos, color, fontObj, size):
+        self.surface = surface
+        appendix = " " * int(self.surface.get_width() / size * 3)
+        self.text = appendix + text
+        self.text_surface = ''
+        self.hpos = hpos
+        self.position = 0
+        self.font = fontObj
+
+        i = 1
+        while self.text_surface == '':
+            try:
+                self.text_surface = self.font.render(self.text, True, color)
+            except:
+                print(i, len(text), "News text too large to render... shortening")
+                self.text = appendix + text[:-(int(len(text) * 0.1 * i))]
+                i += 1
+        (self.tx, self.ty) = self.text_surface.get_size()
+
+    def __del__(self):
+        "Destructor to make sure resources are released"
+
+    def update(self):
+        # update every frame
+        self.surface.blit(self.text_surface,
+                          (0, self.hpos),
+                          (self.position, 0, self.tx, self.ty)
+                          )
+        if self.position < self.tx:
+            # Save CPU setting this variable. Lower values will consume more. Higher ones may produce text flickering
+            self.position += 3
+        else:
+            self.position = 0
+
+
+####################################################################
 def event_loop():
 
     etype = ekey = 0
@@ -429,6 +495,34 @@ def measure_temp(archOS):
         temp = "n/a"
 
     return temp.replace("temp=", "")
+
+
+####################################################################
+def elimina_tilde(cadena):
+    # Use only in python 2. Not required (and will not work) on python 3
+
+    try:
+        trans_tab = dict.fromkeys(map(ord, u'\u0301\u0308'), None)
+        s = unicode(cadena, "utf-8")
+        cadena = normalize('NFKC', normalize('NFKD', s).translate(trans_tab))
+    except:
+        print("Error removing accent from string", cadena)
+        print(traceback.format_exc())
+
+    return cadena
+
+
+####################################################################
+def ConvertWindDir(code, lang, defaultlang):
+
+    value = int((code / 22.5) + 0.5)
+
+    if lang != defaultlang:
+        direction = ["N", "NNE", "NE", "ENE", "E", "ESE", "SE", "SSE", "S", "SSO", "SO", "OSO", "O", "ONO", "NO", "NNO"]
+    else:
+        direction = ["N", "NNE", "NE", "ENE", "E", "ESE", "SE", "SSE", "S", "SSW", "SW", "WSW", "W", "WNW", "NW", "NNW"]
+
+    return direction[(value % 16)]
 
 
 ####################################################################

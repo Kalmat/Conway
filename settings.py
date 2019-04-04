@@ -14,6 +14,11 @@ logging = True
 logging_verbose = False
 show_intro = True
 procedural_terrain = False
+death_show = True
+play_music = False          # PENDING: eats a lot of CPU even idle! (found no solution/alternative googling around...)
+draw_independently = False  # PENDING: avoid flickering
+polygon_feed = False
+fps = 12
 
 categories = ["prey", "predator", "both"]
 genders = ["male", "female"]
@@ -201,7 +206,7 @@ fauna = [
      "Starvation Size Ratio": 0.3,
      "Starvation Size Limit": 6,
      "Hunt Randomize": True,
-     "Hunt Success": 3,
+     "Hunt Success": 5,
      "Birth Size": 1,
      "Maturity Size": 20,
      "Growth Gap": 10,
@@ -335,6 +340,10 @@ values_font_size = int(display_size[0]*12/1280)
 # POSITIONS
 intro_icon_gap = [(80, 180), (170, 75), (120, 80), (220, 200)]
 intro_icon_pos = [(0, 1), (1, 0), (0, 0), (1, 1)]
+
+# MUSIC
+song_intro = "music/song_intro.mp3"
+song = "music/song.mp3"
 
 
 """ MIXED SCENARIOS
