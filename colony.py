@@ -1049,10 +1049,10 @@ class Colony:
             end_x = min(self.xmax, Xpos + size/1.5)
             if Ypos < Yppos:
                 Ypos, Yppos = Yppos, Ypos
-            init_yb = min(self.xmax, Ypos + size)
-            init_yt = max(self.xmin, Yppos - size)
-            end_yb = min(self.xmax, Ypos + size)
-            end_yt = max(self.xmin, Yppos - size)
+            init_yb = min(self.ymax, Ypos + size)
+            init_yt = max(self.ymin, Yppos - size)
+            end_yb = min(self.ymax, Ypos + size)
+            end_yt = max(self.ymin, Yppos - size)
         else:
             if Xpos > Xppos:
                 Xpos, Xppos = Xppos, Xpos
@@ -1258,8 +1258,8 @@ class Colony:
                 else:
                     icon = disputil.loadIcon("Godzilla", settings.icons_folder)
                 icon = pygame.transform.smoothscale(icon, (settings.cataclism_icon_scale, settings.cataclism_icon_scale))
-                x = random.randint(50, self.xmax - 50)
-                y = random.randint(50, self.ymax - 50)
+                x = random.randint(self.xmin, self.xmax - settings.cataclism_icon_scale)
+                y = random.randint(self.ymin, self.ymax - settings.cataclism_icon_scale)
                 self.screen.blit(icon, (x, y))
                 pygame.display.update((x, y, settings.cataclism_icon_scale, settings.cataclism_icon_scale))
                 casualties = 0
