@@ -98,7 +98,7 @@ def InitDisplay(x=None, y=None, windowed=False, hideMouse=True, clearScreen=Fals
         screen.fill((0, 0, 0))
         pygame.display.update()
 
-    """ TRANSPARENT BACKGROUND? This will simulate it (only in fullscreen mode):
+    """ TRANSPARENT BACKGROUND? This will simulate it (only in FULLSCREEN mode):
     import ImageGrab, Image 
 
     im = Imagegrab.grab()
@@ -128,7 +128,7 @@ def play_music(song, loops=0):
     if song is not None:
         # Load song
         pygame.mixer.music.load(song)
-        # Play music (loops represents value+1 times to be played. Set to -1 for infinite loop)
+        # Play music (loops represents value+1 times to be played. Set it to -1 for infinite loop)
         pygame.mixer.music.play(loops=loops)
         playing = True
     else:
@@ -499,7 +499,7 @@ def measure_temp(archOS):
 
 ####################################################################
 def elimina_tilde(cadena):
-    # Use only in python 2. Not required (and will not work) on python 3
+    # Use only in python 2. Not required (and will not work) in python 3
 
     try:
         trans_tab = dict.fromkeys(map(ord, u'\u0301\u0308'), None)

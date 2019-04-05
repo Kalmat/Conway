@@ -15,7 +15,7 @@ logging_verbose = False
 show_intro = True
 procedural_terrain = False
 death_show = True
-play_music = False          # PENDING: eats a lot of CPU even idle! (found no solution/alternative googling around...)
+play_music = False          # PENDING: eats a lot of CPU even idle! (no cross-platform/parallel solution found yet)
 draw_independently = False  # PENDING: avoid flickering
 polygon_feed = False
 fps = 12
@@ -342,8 +342,8 @@ intro_icon_gap = [(80, 180), (170, 75), (120, 80), (220, 200)]
 intro_icon_pos = [(0, 1), (1, 0), (0, 0), (1, 1)]
 
 # MUSIC
-song_intro = "music/song_intro.mp3"
-song = "music/song.mp3"
+song_intro = "music/song_intro.wav"
+song = "music/song.wav"
 
 
 """ MIXED SCENARIOS
