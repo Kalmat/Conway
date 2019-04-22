@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 # -*- coding: utf-8 -*-
 
 import pygame
@@ -6,6 +6,7 @@ import time
 import random
 import numpy
 import math
+import matplotlib.path
 import noise
 import copy
 import importlib
@@ -13,7 +14,6 @@ import settings
 # import sys
 # sys.path.insert(0, r'../modules/')
 import disputil
-import matplotlib.path
 
 
 ###############################################################################
@@ -74,9 +74,10 @@ class Bacteria(pygame.sprite.Sprite):
 class Colony:
 
     ####################################################################
-    def __init__(self):
+    def __init__(self, init_display=True):
 
-        self.screen, self.xmax, self.ymax, self.interpreter, self.archOS = \
+        if init_display:
+            self.screen, self.xmax, self.ymax, self.interpreter, self.archOS = \
                                     disputil.InitDisplay(settings.display_size[0], settings.display_size[1],
                                                          hideMouse=False, icon=settings.icons_folder + settings.icon,
                                                          caption=settings.caption)
@@ -142,8 +143,8 @@ class Colony:
         self.screen.fill(settings.cBkg)
         pygame.draw.rect(self.screen, settings.cBkg_highlighted, (self.xmax*0.1, self.ymax*0.1, self.xmax*0.8, self.ymax*0.8))
 
-        for i in range(len(self.icon)):
-            icon = disputil.loadIcon("Virus"+str(i+1)+"_Intro", settings.icons_folder)
+        for i in range(len(settings.intro_virus_icons)):
+            icon = disputil.loadIcon(settings.intro_virus_icons[i], settings.icons_folder)
             icon = pygame.transform.smoothscale(icon, (settings.intro_icons_scale, settings.intro_icons_scale))
             x = self.xmax * settings.intro_icon_pos[i][0] - int(self.xmax * settings.intro_icon_gap[i][0] / 1280)
             y = self.ymax * settings.intro_icon_pos[i][1] - int(self.ymax * settings.intro_icon_gap[i][1] / 800)
@@ -242,7 +243,7 @@ class Colony:
                 logo = pygame.transform.smoothscale(logo, (settings.intro_fauna_icon_scale, settings.intro_fauna_icon_scale))
 
                 for i in range(len(icon)):
-                    icon[i] = disputil.loadIcon(settings.intro_icons_prefix+str(i+1)+settings.intro_icons_suffix, settings.icons_folder)
+                    icon[i] = disputil.loadIcon(settings.intro_virus_icons[i], settings.icons_folder)
                     icon[i] = pygame.transform.smoothscale(icon[i], (settings.fauna_icons_scale, settings.fauna_icons_scale))
                     if i == 0:
                         ix, iy = icon[i].get_size()
@@ -409,7 +410,7 @@ class Colony:
 
         self.screen.fill(settings.cBkg_highlighted)
 
-        icon = disputil.loadIcon(bacteria["Icon File"] +"_Intro", settings.icons_folder)
+        icon = disputil.loadIcon(settings.intro_virus_icons[bacteria["Icon Index"]], settings.icons_folder)
         icon = pygame.transform.smoothscale(icon, (settings.bacteria_options_icon_scale, settings.bacteria_options_icon_scale))
         ix, iy = icon.get_size()
         self.screen.blit(icon, (self.xmax / 2 - ix/2, self.ymin + self.ymargin))
@@ -695,13 +696,14 @@ class Colony:
             bacteria["Category"], bacteria["Larva Category"] = bacteria["Larva Category"], bacteria["Category"]
             bacteria["Speed"], bacteria["Larva Speed"] = bacteria["Larva Speed"], bacteria["Speed"]
             bacteria["Rotate"], bacteria["Larva Rotate"] = bacteria["Larva Rotate"], bacteria["Rotate"]
+            bacteria["Food"], bacteria["Larva Food"] = bacteria["Larva Food"], bacteria["Food"]
         else:
             bacteria["Larva Status"] = False
         bacteria["Next Run"] = random.randint(1, bacteria["Max Run"])
         bacteria["Last Direction"] = random.choice(settings.directions)
         bacteria["Maturity Init Point"] = int(bacteria["Longevity"] * bacteria["Maturity Init Ratio"])
         bacteria["Maturity End Point"] = int(bacteria["Longevity"] * bacteria["Maturity End Ratio"])
-        bacteria["Age"] = random.randint(0, int(bacteria_settings["Maturity Init Point"] / 4))
+        bacteria["Age"] = random.randint(0, int(bacteria["Maturity Init Point"] / 4))
         if not bacteria["Overgrowth"]:
             bacteria["Maturity Size"] = max(bacteria["Maturity Size"], bacteria["Max Size"])
         bacteria["Growth Gap"] = max(int(bacteria["Maturity Init Point"] / bacteria["Maturity Size"]), 1)
@@ -716,6 +718,7 @@ class Colony:
         bacteria["Gestation Size Limit"] = int(max(bacteria["Maturity Size"] * bacteria["Gestation Size Ratio"], bacteria["Max Size"] * bacteria["Gestation Size Ratio"]))
         bacteria["Last Gestation"] = bacteria["Gestation Gap"]
         bacteria["Icon Index"] = icon
+        bacteria["Shell Color"] = list(map(lambda x: min(255, x + 50), bacteria["Color"]))
         bacteria["Sprite"] = None
         bacteria["Sprite"] = self.check_sprite(bacteria)
 
@@ -821,7 +824,7 @@ class Colony:
             else:
                 img = pygame.Surface((bacteria["Size"] * 2, bacteria["Size"] * 2))
                 pygame.draw.circle(img, bacteria["Color"], (bacteria["Size"], bacteria["Size"]), bacteria["Size"], 0)
-                pygame.draw.circle(img, pygame.Color("white"), (bacteria["Size"], bacteria["Size"]), bacteria["Size"], min(2, bacteria["Size"]))
+                pygame.draw.circle(img, bacteria["Shell Color"], (bacteria["Size"], bacteria["Size"]), bacteria["Size"], min(2, bacteria["Size"]))
                 set_color = True
 
             if bacteria_sprite is None:
@@ -1045,10 +1048,10 @@ class Colony:
             Ypos = self.ymax
 
         if Xpos == Xppos:
-            init_x = max(self.xmin, Xpos - size/1.5)
-            end_x = min(self.xmax, Xpos + size/1.5)
             if Ypos < Yppos:
                 Ypos, Yppos = Yppos, Ypos
+            init_x = max(self.xmin, Xpos - size/1.5)
+            end_x = min(self.xmax, Xpos + size/1.5)
             init_yb = min(self.ymax, Ypos + size)
             init_yt = max(self.ymin, Yppos - size)
             end_yb = min(self.ymax, Ypos + size)
@@ -1069,12 +1072,6 @@ class Colony:
         right_top = (end_x, end_yt)
         right_bottom = (end_x, end_yb)
 
-        width = (end_x - init_x) * 1.4
-        height = (max(init_yb, end_yb) - min(init_yt, end_yt)) * 1.4
-
-        x = init_x
-        y = min(init_yt, end_yt)
-
         verts = [
                  left_bottom,
                  left_top,
@@ -1089,9 +1086,15 @@ class Colony:
                  matplotlib.path.Path.LINETO,
                  matplotlib.path.Path.LINETO,
                  matplotlib.path.Path.CLOSEPOLY,
-                 ]
+                ]
 
         path = matplotlib.path.Path(verts, codes)
+
+        width = (end_x - init_x) * 1.4
+        height = (max(init_yb, end_yb) - min(init_yt, end_yt)) * 1.4
+
+        x = init_x
+        y = min(init_yt, end_yt)
 
         return path, width, height, x, y
 
@@ -1134,6 +1137,7 @@ class Colony:
             bacteria["Category"] = bacteria["Larva Category"]
             bacteria["Speed"] = bacteria["Larva Speed"]
             bacteria["Rotate"] = bacteria["Larva Rotate"]
+            bacteria["Food"] = bacteria["Larva Food"]
             bacteria["Larva Status"] = False
 
         return bacteria
@@ -1226,6 +1230,8 @@ class Colony:
             event = disputil.event_loop()
             time.sleep(0.01)
 
+        self.__init__(init_display=False)
+
         return
 
     #####################################################################
@@ -1282,8 +1288,7 @@ class Colony:
 
             elif event["Key"] == pygame.K_r:
                 importlib.reload(settings)
-                pygame.display.quit()
-                self.__init__()
+                self.__init__(init_display=False)
                 self.create_terrain()
                 self.create_colony()
 
