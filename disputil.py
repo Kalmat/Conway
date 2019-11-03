@@ -526,6 +526,15 @@ def ConvertWindDir(code, lang, defaultlang):
 
 
 ####################################################################
+def get_resource_path(rel_path):
+    """ Thanks to: detly < https://stackoverflow.com/questions/4416336/adding-a-program-icon-in-python-gtk/4416367 > """
+    dir_of_py_file = os.path.dirname(__file__)
+    rel_path_to_resource = os.path.join(dir_of_py_file, rel_path)
+    abs_path_to_resource = os.path.abspath(rel_path_to_resource)
+    return abs_path_to_resource
+
+
+####################################################################
 def get_input_box_value(screen, rect, back_color=pygame.Color('black'), line_color=pygame.Color('white'), line_thickness=2,
              font="freesans", font_size=32, text='', text_color=pygame.Color('white'), init_text='Enter text',
              init_text_color=pygame.Color('gray55')):

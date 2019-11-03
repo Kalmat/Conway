@@ -1179,7 +1179,7 @@ class Colony:
         else:
             self.colony_age += 1
             population = len(colony)
-            self.average = int(((self.average * max(1, self.colony_age - 1)) + population) / self.colony_age)
+            self.average = self.average + ((population - self.average) / max(1, self.colony_age))
             dif = int(((population - self.average) / self.average) * 100)
             if self.logging:
                 print("COLONY age: %d | population: %d (%d Preys / %d Predators) | average: %d | dif: %d%%" % (self.colony_age, population, self.preys, self.predators, self.average, dif))
