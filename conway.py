@@ -24,7 +24,7 @@ fullScreen = False       # Fullscreen or windowed
 windowSize = (1000, 1000)  # Ignored if Fulscreen or Wallpaper mode. It has to be fine-tuned together with cellSize and Ticks
 asWallpaper = False       # At bottom, no focus, no input (will force Fullscreen even though set to False)
 renovate = True          # Completely renew board or "Rain of God" (random drops of "life" or "death")
-renovationLap = 30        # Time in minutes to renovate board
+renovationLap = 5        # Time in minutes to renovate board
 sphericBoard = False     # Board has borders (it physically ends) or not (like a sphere)
 
 
