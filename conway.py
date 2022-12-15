@@ -24,7 +24,7 @@ fullScreen = False       # Fullscreen or windowed
 windowSize = (1000, 1000)  # Ignored if Fulscreen or Wallpaper mode. It has to be fine-tuned together with cellSize and Ticks
 asWallpaper = False       # At bottom, no focus, no input (will force Fullscreen even though set to False)
 renovate = True          # Completely renew board or "Rain of God" (random drops of "life" or "death")
-renovationLap = 5        # Time in minutes to renovate board
+renovationLap = 10        # Time in minutes to renovate board
 sphericBoard = False     # Board has borders (it physically ends) or not (like a sphere)
 
 
@@ -84,7 +84,7 @@ class ConwayGameOfLife:
         targetSleeps = targetTime / self.sleepLap
         self.sleepPeriod = int((self.size[0] * self.size[1]) / targetSleeps)
         self.cycles = 0
-        self.targetCycles = renovationLap * 60 * self.ticks
+        self.targetCycles = renovationLap * 60
 
         self.board = [[] for x in range(self.size[0])]
         self.boardControl = [["" for y in range(self.size[1])] for x in range(self.size[0])]
@@ -94,7 +94,7 @@ class ConwayGameOfLife:
             self.randomInitialBoard(True)
         else:
             # Simple initial seed for demo/testing purposes:
-            self.demoInitialBoard()
+            self.demoInitialBoard(random.Random().randint(1, 2))
 
     def run(self, keep):
 
@@ -141,7 +141,7 @@ class ConwayGameOfLife:
                 if not self.demo:
                     self.randomInitialBoard()
                 else:
-                    self.demoInitialBoard()
+                    self.demoInitialBoard(random.Random().randint(1, 2))
             else:
                 self.rainOfGod()
         else:
@@ -166,7 +166,7 @@ class ConwayGameOfLife:
         pygame.display.flip()
         time.sleep(1 / self.ticks)
 
-    def demoInitialBoard(self, demo=1):
+    def demoInitialBoard(self, demo):
 
         self.screen.fill(self.bgcolor)
         demos = {"demo1":
@@ -346,12 +346,12 @@ class SettingsWindow(QtWidgets.QMainWindow, Ui_Form):
 
     def runConway(self):
 
-            self.keep = threading.Event()
-            self.keep.set()
-            self.MyBoard = ConwayGameOfLife()
-            self.board = threading.Thread(target=self.MyBoard.run, args=(self.keep, ))
-            self.board.daemon = True
-            self.board.start()
+        self.keep = threading.Event()
+        self.keep.set()
+        self.MyBoard = ConwayGameOfLife()
+        self.board = threading.Thread(target=self.MyBoard.run, args=(self.keep, ))
+        self.board.daemon = True
+        self.board.start()
 
     def execAction(self, option):
 
