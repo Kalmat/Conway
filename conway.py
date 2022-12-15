@@ -1,4 +1,3 @@
-#!/usr/bin/python3
 # -*- coding: utf-8 -*-
 
 import copy
@@ -10,7 +9,7 @@ import time
 
 import pygame
 import pywinctl
-from PyQt5 import QtWidgets, QtGui
+from PyQt5 import QtWidgets, QtGui, QtCore
 from kalmatools import utils
 from conway_ui import Ui_Form
 
@@ -30,13 +29,14 @@ sphericBoard = False     # Board has borders (it physically ends) or not (like a
 
 class ConwayGameOfLife:
 
-    def __init__(self):
+    def __init__(self, parentClose):
 
         pygame.display.init()
         pygame.display.set_caption("My Conway")
         img = pygame.image.load(utils.resource_path(__file__, "resources/icons") + "colony.ico")
         pygame.display.set_icon(img)
 
+        self.parentClose = parentClose
         self.fullscreen = fullScreen
         self.wallpaper = asWallpaper
         self.renovate = renovate
@@ -96,18 +96,6 @@ class ConwayGameOfLife:
             # Simple initial seed for demo/testing purposes:
             self.demoInitialBoard(random.Random().randint(1, 2))
 
-    def run(self, keep):
-
-        # clock = pygame.time.Clock()
-
-        while keep.is_set():
-            pygame.event.pump()
-            self.evolve()
-            # clock.tick(self.ticks)
-
-        pygame.display.quit()
-        pygame.quit()
-
     def evolve(self):
 
         self.screen.fill(self.bgcolor)
@@ -146,7 +134,6 @@ class ConwayGameOfLife:
                 self.rainOfGod()
         else:
             self.board = copy.deepcopy(self.boardControl)
-
     def randomInitialBoard(self, firstRun=False):
 
         self.screen.fill(self.bgcolor)
@@ -165,6 +152,26 @@ class ConwayGameOfLife:
                     time.sleep(self.sleepLap)
         pygame.display.flip()
         time.sleep(1 / self.ticks)
+
+    def run(self, keep, parentWait):
+
+        # clock = pygame.time.Clock()
+
+        myStop = False
+        while keep.is_set():
+
+            self.evolve()
+
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    myStop = True
+                    keep.clear()
+
+            # clock.tick(self.ticks)
+
+        parentWait.set()
+        if myStop:
+            self.parentClose()
 
     def demoInitialBoard(self, demo):
 
@@ -346,17 +353,25 @@ class SettingsWindow(QtWidgets.QMainWindow, Ui_Form):
 
     def runConway(self):
 
-        self.keep = threading.Event()
-        self.keep.set()
-        self.MyBoard = ConwayGameOfLife()
-        self.board = threading.Thread(target=self.MyBoard.run, args=(self.keep, ))
+        self.childKeep = threading.Event()
+        self.parentWait = threading.Event()
+        self.childKeep.set()
+        self.MyBoard = ConwayGameOfLife(self.execAction)
+        self.board = threading.Thread(target=self.MyBoard.run, args=(self.childKeep, self.parentWait, ))
         self.board.daemon = True
         self.board.start()
 
-    def execAction(self, option):
+    def execAction(self, option="Q"):
 
         if option == "Q":
-            self.keep.clear()
+            self.childKeep.clear()
+            self.parentWait.wait()
+            try:
+                pygame.display.quit()
+                pygame.quit()
+                self.board.join()
+            except:
+                pass
             self.destroy()
             QtWidgets.QApplication.quit()
 
